@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 class ExerciseListViewModel: ObservableObject {
     @Published var exercises: [Exercise] = []

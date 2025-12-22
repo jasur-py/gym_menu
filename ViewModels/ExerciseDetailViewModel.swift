@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 import PhotosUI
 
 class ExerciseDetailViewModel: ObservableObject {
@@ -60,6 +61,15 @@ class ExerciseDetailViewModel: ObservableObject {
             exercise.imagePath = nil
             loadedImage = nil
         }
+    }
+    
+    func addSet() {
+        exercise.sets.append(ExerciseSet())
+    }
+    
+    func removeSet(at index: Int) {
+        guard index < exercise.sets.count else { return }
+        exercise.sets.remove(at: index)
     }
 }
 
