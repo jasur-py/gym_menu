@@ -1,12 +1,14 @@
 import Foundation
 import SwiftUI
 import Combine
+import UIKit
 import PhotosUI
 
 class ExerciseDetailViewModel: ObservableObject {
     @Published var exercise: Exercise
-    @Published var selectedPhoto: PhotosPickerItem?
-    @Published var loadedImage: UIImage?
+    @Published var selectedPhotos: [PhotosPickerItem] = []
+    @Published var loadedImages: [UIImage] = []
+    @Published var trainingGroupViewModel = TrainingGroupViewModel()
     
     private let dataService = DataPersistenceService.shared
     private let imageService = ImageStorageService.shared
@@ -15,38 +17,45 @@ class ExerciseDetailViewModel: ObservableObject {
     var isNewExercise: Bool
     
     init(exercise: Exercise? = nil, onSave: @escaping (Exercise) -> Void) {
+        self.onSave = onSave
+        
         if let exercise = exercise {
             self.exercise = exercise
             self.isNewExercise = false
-            // Load existing image if available
-            if let imagePath = exercise.imagePath {
-                self.loadedImage = imageService.loadImage(from: imagePath)
-            }
         } else {
             self.exercise = Exercise()
             self.isNewExercise = true
         }
-        self.onSave = onSave
+        
+        // Load existing images after all properties are initialized
+        if !self.exercise.imagePaths.isEmpty {
+            self.loadedImages = self.exercise.imagePaths.compactMap { path in
+                imageService.loadImage(from: path)
+            }
+        }
     }
     
     func handlePhotoSelection() {
-        guard let selectedPhoto = selectedPhoto else { return }
+        guard !selectedPhotos.isEmpty else { return }
         
         Task {
-            if let data = try? await selectedPhoto.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                await MainActor.run {
-                    // Delete old image if exists
-                    if let oldImagePath = exercise.imagePath {
-                        imageService.deleteImage(at: oldImagePath)
-                    }
-                    
-                    // Save new image
-                    if let newImagePath = imageService.saveImage(image) {
-                        exercise.imagePath = newImagePath
-                        loadedImage = image
+            var newImagePaths: [String] = []
+            var newImages: [UIImage] = []
+            
+            for photo in selectedPhotos {
+                if let data = try? await photo.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    if let imagePath = imageService.saveImage(image) {
+                        newImagePaths.append(imagePath)
+                        newImages.append(image)
                     }
                 }
+            }
+            
+            await MainActor.run {
+                exercise.imagePaths.append(contentsOf: newImagePaths)
+                loadedImages.append(contentsOf: newImages)
+                selectedPhotos = []
             }
         }
     }
@@ -55,12 +64,22 @@ class ExerciseDetailViewModel: ObservableObject {
         onSave(exercise)
     }
     
-    func removeImage() {
-        if let imagePath = exercise.imagePath {
-            imageService.deleteImage(at: imagePath)
-            exercise.imagePath = nil
-            loadedImage = nil
+    func removeImage(at index: Int) {
+        guard index < exercise.imagePaths.count else { return }
+        let imagePath = exercise.imagePaths[index]
+        imageService.deleteImage(at: imagePath)
+        exercise.imagePaths.remove(at: index)
+        if index < loadedImages.count {
+            loadedImages.remove(at: index)
         }
+    }
+    
+    func removeAllImages() {
+        for imagePath in exercise.imagePaths {
+            imageService.deleteImage(at: imagePath)
+        }
+        exercise.imagePaths = []
+        loadedImages = []
     }
     
     func addSet() {
@@ -72,4 +91,3 @@ class ExerciseDetailViewModel: ObservableObject {
         exercise.sets.remove(at: index)
     }
 }
-

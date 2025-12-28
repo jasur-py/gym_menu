@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct ExerciseDetailView: View {
     @ObservedObject var viewModel: ExerciseDetailViewModel
@@ -11,127 +12,16 @@ struct ExerciseDetailView: View {
     
     var body: some View {
         Form {
-            Section(header: Text("Exercise Details")) {
-                TextField("Exercise Name", text: $viewModel.exercise.name)
-                    .focused($isFocused)
-            }
-            
-            Section(header: HStack {
-                Text("Sets")
-                Spacer()
-                Button(action: {
-                    viewModel.addSet()
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.blue)
-                }
-            }) {
-                if viewModel.exercise.sets.isEmpty {
-                    Text("No sets added. Tap + to add a set.")
-                        .foregroundColor(.secondary)
-                        .font(.caption)
-                } else {
-                    ForEach(Array(viewModel.exercise.sets.enumerated()), id: \.element.id) { index, exerciseSet in
-                        VStack(spacing: 12) {
-                            HStack {
-                                Text("Set \(index + 1)")
-                                    .font(.headline)
-                                Spacer()
-                                Button(role: .destructive, action: {
-                                    viewModel.removeSet(at: index)
-                                }) {
-                                    Image(systemName: "trash")
-                                        .font(.caption)
-                                }
-                            }
-                            
-                            HStack {
-                                Text("Reps")
-                                Spacer()
-                                Stepper(value: Binding(
-                                    get: { exerciseSet.reps },
-                                    set: { newValue in
-                                        viewModel.exercise.sets[index].reps = newValue
-                                    }
-                                ), in: 0...100) {
-                                    Text("\(exerciseSet.reps)")
-                                }
-                            }
-                            
-                            HStack {
-                                Text("Weight (\(settingsService.weightUnit.rawValue))")
-                                Spacer()
-                                TextField("0.0", value: Binding(
-                                    get: { exerciseSet.weight },
-                                    set: { newValue in
-                                        viewModel.exercise.sets[index].weight = newValue
-                                    }
-                                ), format: .number)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(width: 100)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            
-            Section(header: Text("Notes")) {
-                TextEditor(text: $viewModel.exercise.notes)
-                    .frame(minHeight: 100)
-            }
-            
-            Section(header: Text("Image")) {
-                PhotosPicker(selection: $viewModel.selectedPhoto, matching: .images) {
-                    HStack {
-                        Image(systemName: "photo")
-                        Text("Select Photo")
-                    }
-                }
-                .onChange(of: viewModel.selectedPhoto) { _ in
-                    viewModel.handlePhotoSelection()
-                }
-                
-                if viewModel.loadedImage != nil || viewModel.exercise.imagePath != nil {
-                    CollapsibleImageView(
-                        image: viewModel.loadedImage,
-                        imagePath: viewModel.exercise.imagePath
-                    )
-                    
-                    Button(role: .destructive, action: {
-                        viewModel.removeImage()
-                    }) {
-                        HStack {
-                            Image(systemName: "trash")
-                            Text("Remove Image")
-                        }
-                    }
-                }
-            }
+            detailsSection
+            setsSection
+            notesSection
+            imageSection
         }
         .navigationTitle(viewModel.isNewExercise ? "New Exercise" : "Edit Exercise")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
-                    dismiss()
-                }
-            }
-            ToolbarItemGroup(placement: .navigationBarTrailing) {
-                if !viewModel.isNewExercise, onDelete != nil {
-                    Button(role: .destructive) {
-                        showingDeleteConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                }
-                Button("Save") {
-                    viewModel.saveExercise()
-                    dismiss()
-                }
-                .disabled(viewModel.exercise.name.isEmpty)
-            }
+            toolbarLeadingContent
+            toolbarTrailingContent
         }
         .alert("Delete Exercise", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -141,6 +31,171 @@ struct ExerciseDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete \"\(viewModel.exercise.name)\"? This action cannot be undone.")
+        }
+    }
+    
+    private var detailsSection: some View {
+        Section(header: Text("Exercise Details")) {
+            TextField("Exercise Name", text: $viewModel.exercise.name)
+                .focused($isFocused)
+            
+            Picker("Training Group", selection: $viewModel.exercise.groupId) {
+                Text("None").tag(nil as UUID?)
+                ForEach(viewModel.trainingGroupViewModel.groups.filter { $0.name != "All Exercises" }) { group in
+                    Text(group.name).tag(group.id as UUID?)
+                }
+            }
+        }
+    }
+    
+    private var setsSection: some View {
+        Section(header: HStack {
+            Text("Sets")
+            Spacer()
+            Button(action: {
+                viewModel.addSet()
+            }) {
+                Image(systemName: "plus.circle.fill")
+                    .foregroundColor(.blue)
+            }
+        }) {
+            if viewModel.exercise.sets.isEmpty {
+                Text("No sets added. Tap + to add a set.")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            } else {
+                ForEach(Array(viewModel.exercise.sets.enumerated()), id: \.element.id) { index, exerciseSet in
+                    setRow(index: index, set: exerciseSet)
+                }
+            }
+        }
+    }
+    
+    private func setRow(index: Int, set: ExerciseSet) -> some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("Set \(index + 1)")
+                    .font(.headline)
+                Spacer()
+                Button(role: .destructive, action: {
+                    viewModel.removeSet(at: index)
+                }) {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                }
+            }
+            
+            HStack {
+                Text("Reps")
+                Spacer()
+                Stepper(value: Binding(
+                    get: { set.reps },
+                    set: { newValue in
+                        viewModel.exercise.sets[index].reps = newValue
+                    }
+                ), in: 0...100) {
+                    Text("\(set.reps)")
+                }
+            }
+            
+            HStack {
+                Text("Weight (\(settingsService.weightUnit.rawValue))")
+                Spacer()
+                TextField("0.0", value: Binding(
+                    get: { set.weight },
+                    set: { newValue in
+                        viewModel.exercise.sets[index].weight = newValue
+                    }
+                ), format: .number)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 100)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private var notesSection: some View {
+        Section(header: Text("Notes")) {
+            TextEditor(text: $viewModel.exercise.notes)
+                .frame(minHeight: 100)
+        }
+    }
+    
+    private var imageSection: some View {
+        Section(header: Text("Images")) {
+            PhotosPicker(selection: $viewModel.selectedPhotos, maxSelectionCount: 10, matching: .images) {
+                HStack {
+                    Image(systemName: "photo.on.rectangle.angled")
+                    Text("Select Photos")
+                }
+            }
+            .onChange(of: viewModel.selectedPhotos) {
+                viewModel.handlePhotoSelection()
+            }
+            
+            if !viewModel.loadedImages.isEmpty {
+                ScrollView(.horizontal, showsIndicators: true) {
+                    HStack(spacing: 10) {
+                        ForEach(Array(viewModel.loadedImages.enumerated()), id: \.offset) { index, image in
+                            ZStack(alignment: .topTrailing) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 100, height: 100)
+                                    .clipped()
+                                    .cornerRadius(8)
+                                
+                                Button(action: {
+                                    viewModel.removeImage(at: index)
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundColor(.red)
+                                        .background(Color.white.opacity(0.7))
+                                        .clipShape(Circle())
+                                }
+                                .padding(4)
+                            }
+                        }
+                    }
+                }
+                .frame(height: 110)
+                
+                Button(role: .destructive, action: {
+                    viewModel.removeAllImages()
+                }) {
+                    HStack {
+                        Image(systemName: "trash")
+                        Text("Remove All Images")
+                    }
+                }
+            }
+        }
+    }
+    
+    private var toolbarLeadingContent: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") {
+                dismiss()
+            }
+        }
+    }
+    
+    private var toolbarTrailingContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            if !viewModel.isNewExercise, onDelete != nil {
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Image(systemName: "trash")
+                }
+            }
+            Button("Save") {
+                viewModel.saveExercise()
+                dismiss()
+            }
+            .disabled(viewModel.exercise.name.isEmpty)
         }
     }
 }
