@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ExerciseListView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
@@ -12,7 +13,36 @@ struct ExerciseListView: View {
     @State private var showingCalendar = false
     
     var body: some View {
+        ZStack(alignment: .top) {
+            // Background image extending to toolbar area
+            GeometryReader { geometry in
+                ZStack {
+                    // Background image with fallback to gradient
+                    if let headerImage = UIImage(named: "HeaderBackground") {
+                        Image(uiImage: headerImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: geometry.size.width, height: 200)
+                            .clipped()
+                    } else {
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue, Color.purple]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: geometry.size.width, height: 200)
+                    }
+                }
+            }
+            .frame(height: 200)
+            .ignoresSafeArea(edges: .top)
+            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+            
         VStack(spacing: 0) {
+            // Spacer for visual balance
+            Spacer()
+                .frame(height: 80)
+            
             // Group tabs at the top
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -52,9 +82,10 @@ struct ExerciseListView: View {
                         }
                     }
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                .frame(maxHeight: .infinity)
             }
+            .frame(height: 50)
             .background(Color(.systemBackground))
             
             ZStack(alignment: .bottomLeading) {
@@ -100,6 +131,9 @@ struct ExerciseListView: View {
                 .background(settingsService.backgroundColor.ignoresSafeArea())
                 .scrollIndicators(.visible)
                 .ignoresSafeArea(edges: .bottom)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    Color.clear.frame(height: 20)
+                }
             
             // Calendar button - floating at bottom left
             if !showingCalendar {
@@ -175,20 +209,37 @@ struct ExerciseListView: View {
             }
             }
         }
-        .navigationTitle("Gym Planner")
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.clear, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .onAppear {
+            let appearance = UINavigationBarAppearance()
+            appearance.configureWithTransparentBackground()
+            appearance.backgroundColor = .clear
+            UINavigationBar.appearance().standardAppearance = appearance
+            UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     Button(action: {
                         showingGroups = true
                     }) {
                         Image(systemName: "folder")
+                            .font(.title3)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                     }
                     
                     Button(action: {
                         showingSettings = true
                     }) {
                         Image(systemName: "gearshape")
+                            .font(.title3)
+                            .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                     }
                 }
             }
@@ -196,7 +247,10 @@ struct ExerciseListView: View {
                 Button(action: {
                     showingAddExercise = true
                 }) {
-                    Image(systemName: "plus")
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
             }
         }
