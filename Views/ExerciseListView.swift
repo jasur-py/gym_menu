@@ -163,47 +163,51 @@ struct ExerciseListView: View {
             
             // Calendar overlay
             if showingCalendar {
-                // Semi-transparent background
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation {
-                            showingCalendar = false
-                        }
-                    }
-                
-                // Calendar card - properly aligned
-                VStack {
-                    Spacer()
-                    VStack(spacing: 0) {
-                        // Header with close button
-                        HStack {
-                            Text("Calendar")
-                                .font(.headline)
-                                .padding(.leading, 20)
-                            Spacer()
-                            Button(action: {
-                                withAnimation {
-                                    showingCalendar = false
-                                }
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.title2)
-                                    .foregroundColor(.secondary)
+                ZStack {
+                    // Semi-transparent background
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation {
+                                showingCalendar = false
                             }
-                            .padding(.trailing, 20)
                         }
-                        .padding(.vertical, 12)
-                        .background(Color(.systemGray6))
-                        
-                        CalendarView(selectedDate: $selectedDate)
-                            .frame(height: 300)
-                            .background(Color(.systemBackground))
+                    
+                    // Calendar card - properly aligned
+                    VStack {
+                        Spacer()
+                        VStack(spacing: 0) {
+                            // Header with close button
+                            HStack {
+                                Text("Calendar")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Button(action: {
+                                    withAnimation {
+                                        showingCalendar = false
+                                    }
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(Color(.systemGray6))
+                            
+                            CalendarView(selectedDate: $selectedDate)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 16)
+                                .background(Color(.systemBackground))
+                        }
+                        .background(Color(.systemBackground))
+                        .cornerRadius(20)
+                        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
-                    .cornerRadius(20)
-                    .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 100)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -261,7 +265,7 @@ struct ExerciseListView: View {
             NavigationView {
                 ExerciseDetailView(
                     viewModel: ExerciseDetailViewModel(
-                        exercise: Exercise(groupId: viewModel.selectedGroupId),
+                        exercise: Exercise(groupIds: viewModel.selectedGroupId != nil ? [viewModel.selectedGroupId!] : []),
                         onSave: { newExercise in
                             viewModel.addExercise(newExercise)
                             showingAddExercise = false
@@ -288,31 +292,27 @@ struct ExerciseRowView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingEditView = false
     
-    private var groupColor: Color {
-        if let groupId = exercise.groupId,
-           let group = groupViewModel.getGroup(by: groupId) {
-            return group.color
+    private var groupColors: [Color] {
+        exercise.groupIds.compactMap { groupId in
+            groupViewModel.getGroup(by: groupId)?.color
         }
-        return Color.gray.opacity(0.3)
     }
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Colored left border indicator
-            Rectangle()
-                .fill(groupColor)
-                .frame(width: 4)
-            
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             // Header - clickable to expand/collapse
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        // Group color indicator circle
-                        if exercise.groupId != nil {
-                            Circle()
-                                .fill(groupColor)
-                                .frame(width: 10, height: 10)
+                    HStack(spacing: 6) {
+                        // Multiple group color indicator circles
+                        if !exercise.groupIds.isEmpty {
+                            HStack(spacing: 4) {
+                                ForEach(Array(groupColors.enumerated()), id: \.offset) { index, color in
+                                    Circle()
+                                        .fill(color)
+                                        .frame(width: 10, height: 10)
+                                }
+                            }
                         }
                         
                         Text(exercise.name.isEmpty ? "Untitled Exercise" : exercise.name)
@@ -431,10 +431,9 @@ struct ExerciseRowView: View {
                 .padding(.top, 8)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            }
-            .padding(.horizontal, 8)
         }
         .padding(.vertical, 8)
+        .padding(.horizontal, 8)
         .sheet(isPresented: $showingEditView) {
             NavigationView {
                 ExerciseDetailView(
@@ -467,16 +466,13 @@ struct CalendarView: View {
     @Binding var selectedDate: Date
     
     var body: some View {
-        VStack(spacing: 0) {
-            DatePicker(
-                "Select Date",
-                selection: $selectedDate,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.graphical)
-            .padding(.horizontal, 8)
-        }
+        DatePicker(
+            "Select Date",
+            selection: $selectedDate,
+            displayedComponents: [.date]
+        )
+        .datePickerStyle(.graphical)
+        .labelsHidden()
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
     }
 }

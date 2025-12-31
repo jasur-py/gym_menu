@@ -13,6 +13,7 @@ struct ExerciseDetailView: View {
     var body: some View {
         Form {
             detailsSection
+            groupsSection
             setsSection
             notesSection
             imageSection
@@ -38,12 +39,56 @@ struct ExerciseDetailView: View {
         Section(header: Text("Exercise Details")) {
             TextField("Exercise Name", text: $viewModel.exercise.name)
                 .focused($isFocused)
-            
-            Picker("Training Group", selection: $viewModel.exercise.groupId) {
-                Text("None").tag(nil as UUID?)
-                ForEach(viewModel.trainingGroupViewModel.groups.filter { $0.name != "All Exercises" }) { group in
-                    Text(group.name).tag(group.id as UUID?)
+        }
+    }
+    
+    private var groupsSection: some View {
+        Section(header: HStack {
+            Text("Training Groups")
+            Spacer()
+            Text("\(viewModel.exercise.groupIds.count)/\(Exercise.maxGroupsCount)")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }) {
+            ForEach(viewModel.trainingGroupViewModel.groups.filter { $0.name != "All Exercises" }) { group in
+                HStack {
+                    Button(action: {
+                        toggleGroupSelection(group.id)
+                    }) {
+                        HStack {
+                            Image(systemName: viewModel.exercise.groupIds.contains(group.id) ? "checkmark.square.fill" : "square")
+                                .foregroundColor(viewModel.exercise.groupIds.contains(group.id) ? group.color : .gray)
+                                .font(.title3)
+                            
+                            Circle()
+                                .fill(group.color)
+                                .frame(width: 12, height: 12)
+                            
+                            Text(group.name)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
+            }
+            
+            if viewModel.exercise.groupIds.count >= Exercise.maxGroupsCount {
+                Text("Maximum \(Exercise.maxGroupsCount) groups reached")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+    
+    private func toggleGroupSelection(_ groupId: UUID) {
+        if viewModel.exercise.groupIds.contains(groupId) {
+            viewModel.exercise.groupIds.removeAll { $0 == groupId }
+        } else {
+            if viewModel.exercise.groupIds.count < Exercise.maxGroupsCount {
+                viewModel.exercise.groupIds.append(groupId)
             }
         }
     }

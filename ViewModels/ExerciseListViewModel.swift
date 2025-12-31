@@ -19,7 +19,8 @@ class ExerciseListViewModel: ObservableObject {
     
     var filteredExercises: [Exercise] {
         if let selectedGroupId = selectedGroupId {
-            return exercises.filter { $0.groupId == selectedGroupId }
+            // Show exercises that contain the selected group
+            return exercises.filter { $0.groupIds.contains(selectedGroupId) }
         }
         // Show ALL exercises when "All Exercises" is selected
         return exercises
