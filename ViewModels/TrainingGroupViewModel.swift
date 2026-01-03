@@ -14,15 +14,9 @@ class TrainingGroupViewModel: ObservableObject {
     
     func loadGroups() {
         groups = dataService.loadTrainingGroups()
-        // Ensure "All Exercises" group exists and is first
-        if let allExercisesIndex = groups.firstIndex(where: { $0.name == "All Exercises" }) {
-            // Move to front if not already first
-            if allExercisesIndex != 0 {
-                let allExercises = groups.remove(at: allExercisesIndex)
-                groups.insert(allExercises, at: 0)
-                saveGroups()
-            }
-        } else {
+        // Ensure "All Exercises" group exists
+        if !groups.contains(where: { $0.name == "All Exercises" }) {
+            // Add "All Exercises" at the beginning if it doesn't exist
             groups.insert(TrainingGroup(name: "All Exercises", color: .blue), at: 0)
             saveGroups()
         }
@@ -67,6 +61,37 @@ class TrainingGroupViewModel: ObservableObject {
     func getGroup(by id: UUID?) -> TrainingGroup? {
         guard let id = id else { return nil }
         return groups.first(where: { $0.id == id })
+    }
+    
+    // Initialize exercise order for a group with all exercises that belong to it
+    func initializeExerciseOrder(for group: TrainingGroup, with exercises: [Exercise]) {
+        var updatedGroup = group
+        
+        if group.name == "All Exercises" {
+            // Add all exercises to "All Exercises" order
+            let allExerciseIds = exercises.map { $0.id }
+            for exerciseId in allExerciseIds {
+                if !updatedGroup.exerciseOrder.contains(exerciseId) {
+                    updatedGroup.exerciseOrder.append(exerciseId)
+                }
+            }
+        } else {
+            // Add only exercises that contain this group
+            let groupExercises = exercises.filter { $0.groupIds.contains(group.id) }
+            for exercise in groupExercises {
+                if !updatedGroup.exerciseOrder.contains(exercise.id) {
+                    updatedGroup.exerciseOrder.append(exercise.id)
+                }
+            }
+        }
+        
+        updateGroup(updatedGroup)
+    }
+    
+    // Move training group to reorder them
+    func moveGroup(from source: IndexSet, to destination: Int) {
+        groups.move(fromOffsets: source, toOffset: destination)
+        saveGroups()
     }
 }
 

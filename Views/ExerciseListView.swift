@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 struct ExerciseListView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
@@ -11,6 +12,7 @@ struct ExerciseListView: View {
     @State private var expandedExerciseId: UUID?
     @State private var selectedDate = Date()
     @State private var showingCalendar = false
+    @State private var draggedGroup: TrainingGroup?
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -47,39 +49,22 @@ struct ExerciseListView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(groupViewModel.groups) { group in
-                        Button(action: {
-                            withAnimation {
-                                if group.name == "All Exercises" {
-                                    viewModel.selectedGroupId = nil
-                                } else {
-                                    viewModel.selectedGroupId = group.id
+                        TrainingGroupTabButton(
+                            group: group,
+                            isSelected: (group.name == "All Exercises" && viewModel.selectedGroupId == nil) || 
+                                      (group.name != "All Exercises" && viewModel.selectedGroupId == group.id),
+                            onTap: {
+                                withAnimation {
+                                    if group.name == "All Exercises" {
+                                        viewModel.selectedGroupId = nil
+                                    } else {
+                                        viewModel.selectedGroupId = group.id
+                                    }
                                 }
-                            }
-                        }) {
-                            let isSelected = (group.name == "All Exercises" && viewModel.selectedGroupId == nil) || 
-                                           (group.name != "All Exercises" && viewModel.selectedGroupId == group.id)
-                            
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(group.color)
-                                    .frame(width: 12, height: 12)
-                                
-                                Text(group.name)
-                                    .font(.subheadline)
-                                    .fontWeight(isSelected ? .semibold : .regular)
-                            }
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(isSelected ? group.color.opacity(0.2) : Color(.systemGray6))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(isSelected ? group.color : Color.clear, lineWidth: 2)
-                            )
-                        }
+                            },
+                            draggedGroup: $draggedGroup,
+                            groupViewModel: groupViewModel
+                        )
                     }
                 }
                 .padding(.horizontal, 12)
@@ -125,6 +110,7 @@ struct ExerciseListView: View {
                         }
                     }
                     .onDelete(perform: viewModel.deleteExercise)
+                    .onMove(perform: viewModel.moveExercise)
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
@@ -219,6 +205,16 @@ struct ExerciseListView: View {
         .toolbarBackground(.clear, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
+            // Connect groupViewModel to exerciseListViewModel for sorting
+            viewModel.groupViewModel = groupViewModel
+            
+            // Initialize exercise orders for all groups if empty (migration for existing data)
+            for group in groupViewModel.groups {
+                if group.exerciseOrder.isEmpty {
+                    groupViewModel.initializeExerciseOrder(for: group, with: viewModel.exercises)
+                }
+            }
+            
             let appearance = UINavigationBarAppearance()
             appearance.configureWithTransparentBackground()
             appearance.backgroundColor = .clear
@@ -474,5 +470,78 @@ struct CalendarView: View {
         .datePickerStyle(.graphical)
         .labelsHidden()
         .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Training Group Tab Button with Drag & Drop
+struct TrainingGroupTabButton: View {
+    let group: TrainingGroup
+    let isSelected: Bool
+    let onTap: () -> Void
+    @Binding var draggedGroup: TrainingGroup?
+    @ObservedObject var groupViewModel: TrainingGroupViewModel
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(group.color)
+                    .frame(width: 12, height: 12)
+                
+                Text(group.name)
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .semibold : .regular)
+            }
+            .foregroundColor(.primary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? group.color.opacity(0.2) : Color(.systemGray6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isSelected ? group.color : Color.clear, lineWidth: 2)
+            )
+            .opacity(draggedGroup?.id == group.id ? 0.5 : 1.0)
+        }
+        .onDrag {
+            self.draggedGroup = group
+            return NSItemProvider(object: group.id.uuidString as NSString)
+        }
+        .onDrop(of: [.text], delegate: TrainingGroupDropDelegate(
+            group: group,
+            draggedGroup: $draggedGroup,
+            groupViewModel: groupViewModel
+        ))
+    }
+}
+
+// MARK: - Drop Delegate for Training Group Tabs
+struct TrainingGroupDropDelegate: DropDelegate {
+    let group: TrainingGroup
+    @Binding var draggedGroup: TrainingGroup?
+    @ObservedObject var groupViewModel: TrainingGroupViewModel
+    
+    func performDrop(info: DropInfo) -> Bool {
+        draggedGroup = nil
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let draggedGroup = draggedGroup else { return }
+        guard draggedGroup.id != group.id else { return }
+        
+        // Find indices
+        guard let fromIndex = groupViewModel.groups.firstIndex(where: { $0.id == draggedGroup.id }),
+              let toIndex = groupViewModel.groups.firstIndex(where: { $0.id == group.id }) else {
+            return
+        }
+        
+        // Perform the move
+        withAnimation(.default) {
+            groupViewModel.groups.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+            groupViewModel.saveGroups()
+        }
     }
 }
