@@ -56,19 +56,23 @@ A modern, feature-rich iOS workout tracking app built with SwiftUI and MVVM arch
 ## 📱 Screenshots
 
 ### Main Interface
-![Main View](Screenshots/main_page.png)
+<img src="Screenshots/main_page.png" alt="Main View" width="300"/>
+
 *Exercise list with custom training group tabs*
 
 ### Training Groups
-![Training Groups](Screenshots/training_groups.png)
+<img src="Screenshots/training_groups.png" alt="Training Groups" width="300"/>
+
 *Create, manage and organize your training groups*
 
 ### Exercise Details
-![Exercise Detail](Screenshots/exercise_detail.png)
+<img src="Screenshots/exercise_detail.png" alt="Exercise Detail" width="300"/>
+
 *Add/Edit exercise with sets, images, and notes*
 
 ### Settings
-![Settings](Screenshots/settings.png)
+<img src="Screenshots/settings.png" alt="Settings" width="300"/>
+
 *Customize appearance, weight units, and background*
 
 ### Calendar & Dark Mode
