@@ -76,14 +76,9 @@ A modern, feature-rich iOS workout tracking app built with SwiftUI and MVVM arch
 *Customize appearance, weight units, and background*
 
 ### Calendar & Dark Mode
-<table>
-  <tr>
-    <td><img src="Screenshots/calendar.png" alt="Calendar View" width="300"/></td>
-  </tr>
-  <tr>
-    <td align="center"><i>Calendar view for workout tracking</i></td>
-  </tr>
-</table>
+<img src="Screenshots/calendar.png" alt="Calendar View" width="300"/>
+
+*Calendar view for workout tracking*
 
 ---
 
