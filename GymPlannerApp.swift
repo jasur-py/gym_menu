@@ -6,7 +6,8 @@ struct GymPlannerApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // TESTING: NewMainView (switch back to ContentView later)
+            NewMainView()
                 .preferredColorScheme(settingsService.appearanceMode.colorScheme)
         }
     }

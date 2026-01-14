@@ -6,55 +6,107 @@ struct ExerciseListView: View {
     @ObservedObject var viewModel: ExerciseListViewModel
     @StateObject private var groupViewModel = TrainingGroupViewModel()
     @ObservedObject var settingsService = SettingsService.shared
-    @State private var showingAddExercise = false
-    @State private var showingSettings = false
     @State private var showingGroups = false
     @State private var expandedExerciseId: UUID?
-    @State private var selectedDate = Date()
-    @State private var showingCalendar = false
     @State private var draggedGroup: TrainingGroup?
+    @Environment(\.dismiss) private var dismiss
+    
+    var preselectedGroupId: UUID? = nil
     
     var body: some View {
         ZStack(alignment: .top) {
-            // Background image extending to toolbar area
-            GeometryReader { geometry in
-                ZStack {
-                    // Background image with fallback to gradient
-                    if let headerImage = UIImage(named: "HeaderBackground") {
-                        Image(uiImage: headerImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: geometry.size.width, height: 200)
-                            .clipped()
-                    } else {
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue, Color.purple]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                        .frame(width: geometry.size.width, height: 200)
+            // Background gradient (same as workout card)
+            LinearGradient(
+                colors: [Color(hex: "3d7b8c"), Color(hex: "2c5f6f"), Color(hex: "234752")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: 0) {
+                
+                // Main list view - scrollable
+                List {
+                ForEach(viewModel.filteredExercises) { exercise in
+                    ExerciseRowView(
+                        exercise: exercise,
+                        isExpanded: expandedExerciseId == exercise.id,
+                        groupViewModel: groupViewModel,
+                        onToggleExpand: {
+                            withAnimation {
+                                if expandedExerciseId == exercise.id {
+                                    expandedExerciseId = nil
+                                } else {
+                                    expandedExerciseId = exercise.id
+                                }
+                            }
+                        },
+                        onUpdateExercise: { updatedExercise in
+                            viewModel.updateExercise(updatedExercise)
+                        },
+                        settingsService: settingsService,
+                        onDelete: { exerciseToDelete in
+                            viewModel.deleteExercise(exerciseToDelete)
+                            if expandedExerciseId == exerciseToDelete.id {
+                                expandedExerciseId = nil
+                            }
+                        }
+                    )
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            viewModel.deleteExercise(exercise)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
+                .onDelete(perform: viewModel.deleteExercise)
+                .onMove(perform: viewModel.moveExercise)
             }
-            .frame(height: 200)
-            .ignoresSafeArea(edges: .top)
-            .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            .scrollIndicators(.visible)
             
-        VStack(spacing: 0) {
-            // Spacer for visual balance
-            Spacer()
-                .frame(height: 80)
-            
-            // Group tabs at the top
+            // Fixed tab strip at the bottom - Always visible
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
+                    // Add Group Button - Circular with liquid glass
+                    Button(action: {
+                        showingGroups = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                                .frame(width: 48, height: 48)
+                                .overlay(
+                                    Circle()
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                            
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(.primary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    
                     ForEach(groupViewModel.groups) { group in
                         TrainingGroupTabButton(
                             group: group,
                             isSelected: (group.name == "All Exercises" && viewModel.selectedGroupId == nil) || 
                                       (group.name != "All Exercises" && viewModel.selectedGroupId == group.id),
                             onTap: {
-                                withAnimation {
+                                withAnimation(.spring(response: 0.3)) {
                                     if group.name == "All Exercises" {
                                         viewModel.selectedGroupId = nil
                                     } else {
@@ -67,146 +119,107 @@ struct ExerciseListView: View {
                         )
                     }
                 }
-                .padding(.horizontal, 12)
-                .frame(maxHeight: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .frame(height: 50)
-            .background(Color(.systemBackground))
+            .frame(height: 72)
+            .background(
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.primary.opacity(0.05), Color.primary.opacity(0.02)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: -5)
+            )
+            }
             
-            ZStack(alignment: .bottomLeading) {
-                // Main list view - scrollable
-                List {
-                    ForEach(viewModel.filteredExercises) { exercise in
-                        ExerciseRowView(
-                            exercise: exercise,
-                            isExpanded: expandedExerciseId == exercise.id,
-                            groupViewModel: groupViewModel,
-                            onToggleExpand: {
-                                withAnimation {
-                                    if expandedExerciseId == exercise.id {
-                                        expandedExerciseId = nil
-                                    } else {
-                                        expandedExerciseId = exercise.id
-                                    }
-                                }
-                            },
-                            onUpdateExercise: { updatedExercise in
-                                viewModel.updateExercise(updatedExercise)
-                            },
-                            settingsService: settingsService,
-                            onDelete: { exerciseToDelete in
-                                viewModel.deleteExercise(exerciseToDelete)
-                                if expandedExerciseId == exerciseToDelete.id {
-                                    expandedExerciseId = nil
-                                }
-                            }
+            // Vertical Floating Toolbar - Bottom Right - Liquid Glass Design
+            VStack(spacing: 12) {
+                // Back button
+                Button(action: {
+                    // Navigate back to main page with slide animation
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
                         )
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                viewModel.deleteExercise(exercise)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                
+                // Add exercise button - NavigationLink for slide animation
+                NavigationLink(destination: ExerciseDetailView(
+                    viewModel: ExerciseDetailViewModel(
+                        exercise: Exercise(groupIds: viewModel.selectedGroupId != nil ? [viewModel.selectedGroupId!] : []),
+                        onSave: { newExercise in
+                            viewModel.addExercise(newExercise)
                         }
-                    }
-                    .onDelete(perform: viewModel.deleteExercise)
-                    .onMove(perform: viewModel.moveExercise)
+                    ),
+                    onDelete: nil
+                )) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                        )
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                 }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden)
-                .background(settingsService.backgroundColor.ignoresSafeArea())
-                .scrollIndicators(.visible)
-                .ignoresSafeArea(edges: .bottom)
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    Color.clear.frame(height: 20)
-                }
-            
-            // Calendar button - floating at bottom left
-            if !showingCalendar {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Button(action: {
-                            withAnimation {
-                                showingCalendar.toggle()
-                            }
-                        }) {
-                            Image(systemName: "calendar")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                                .frame(width: 50, height: 50)
-                                .background(Color.blue)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
-                        }
-                        .padding(.leading, 20)
-                        .padding(.bottom, 20)
-                        
-                        Spacer()
-                    }
-                }
+                .buttonStyle(.plain)
             }
-            
-            // Calendar overlay
-            if showingCalendar {
-                ZStack {
-                    // Semi-transparent background
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation {
-                                showingCalendar = false
-                            }
-                        }
-                    
-                    // Calendar card - properly aligned
-                    VStack {
-                        Spacer()
-                        VStack(spacing: 0) {
-                            // Header with close button
-                            HStack {
-                                Text("Calendar")
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Button(action: {
-                                    withAnimation {
-                                        showingCalendar = false
-                                    }
-                                }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.title2)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(Color(.systemGray6))
-                            
-                            CalendarView(selectedDate: $selectedDate)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 16)
-                                .background(Color(.systemBackground))
-                        }
-                        .background(Color(.systemBackground))
-                        .cornerRadius(20)
-                        .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: -5)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
-                    }
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            }
+            .padding(.trailing, 16)
+            .padding(.bottom, 88) // Position above the fixed tab strip (72px height + 16px margin)
         }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarBackground(.clear, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
             // Connect groupViewModel to exerciseListViewModel for sorting
             viewModel.groupViewModel = groupViewModel
+            
+            // Set preselected group if provided
+            if let preselectedGroupId = preselectedGroupId {
+                viewModel.selectedGroupId = preselectedGroupId
+            }
             
             // Initialize exercise orders for all groups if empty (migration for existing data)
             for group in groupViewModel.groups {
@@ -221,58 +234,8 @@ struct ExerciseListView: View {
             UINavigationBar.appearance().standardAppearance = appearance
             UINavigationBar.appearance().scrollEdgeAppearance = appearance
         }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                HStack(spacing: 12) {
-                    Button(action: {
-                        showingGroups = true
-                    }) {
-                        Image(systemName: "folder")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                    }
-                    
-                    Button(action: {
-                        showingSettings = true
-                    }) {
-                        Image(systemName: "gearshape")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                    }
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    showingAddExercise = true
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                }
-            }
-        }
         .sheet(isPresented: $showingGroups) {
             TrainingGroupView(groupViewModel: groupViewModel, exerciseViewModel: viewModel)
-        }
-        .sheet(isPresented: $showingAddExercise) {
-            NavigationView {
-                ExerciseDetailView(
-                    viewModel: ExerciseDetailViewModel(
-                        exercise: Exercise(groupIds: viewModel.selectedGroupId != nil ? [viewModel.selectedGroupId!] : []),
-                        onSave: { newExercise in
-                            viewModel.addExercise(newExercise)
-                            showingAddExercise = false
-                        }
-                    ),
-                    onDelete: nil
-                )
-            }
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
         }
     }
 }
@@ -430,6 +393,23 @@ struct ExerciseRowView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 8)
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.primary.opacity(0.15), Color.primary.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                .padding(.vertical, 4)
+        )
         .sheet(isPresented: $showingEditView) {
             NavigationView {
                 ExerciseDetailView(
@@ -458,21 +438,6 @@ struct ExerciseRowView: View {
     }
 }
 
-struct CalendarView: View {
-    @Binding var selectedDate: Date
-    
-    var body: some View {
-        DatePicker(
-            "Select Date",
-            selection: $selectedDate,
-            displayedComponents: [.date]
-        )
-        .datePickerStyle(.graphical)
-        .labelsHidden()
-        .frame(maxWidth: .infinity)
-    }
-}
-
 // MARK: - Training Group Tab Button with Drag & Drop
 struct TrainingGroupTabButton: View {
     let group: TrainingGroup
@@ -483,28 +448,62 @@ struct TrainingGroupTabButton: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
+                // Color indicator circle
                 Circle()
                     .fill(group.color)
-                    .frame(width: 12, height: 12)
+                    .frame(width: 10, height: 10)
+                    .shadow(color: group.color.opacity(0.5), radius: 4, x: 0, y: 2)
                 
                 Text(group.name)
-                    .font(.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
+                    .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
             }
-            .foregroundColor(.primary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .foregroundColor(isSelected ? .white : .primary)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(isSelected ? group.color.opacity(0.2) : Color(.systemGray6))
+                Capsule()
+                    .fill(
+                        isSelected ?
+                        LinearGradient(
+                            colors: [group.color, group.color.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ) :
+                        LinearGradient(
+                            colors: [Color.clear, Color.clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            )
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .opacity(isSelected ? 0 : 1)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(isSelected ? group.color : Color.clear, lineWidth: 2)
+                Capsule()
+                    .stroke(
+                        LinearGradient(
+                            colors: isSelected ?
+                                [Color.white.opacity(0.3), Color.white.opacity(0.1)] :
+                                [Color.primary.opacity(0.15), Color.primary.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(
+                color: isSelected ? group.color.opacity(0.4) : Color.black.opacity(0.05),
+                radius: isSelected ? 8 : 4,
+                x: 0,
+                y: isSelected ? 4 : 2
             )
             .opacity(draggedGroup?.id == group.id ? 0.5 : 1.0)
         }
+        .buttonStyle(.plain)
         .onDrag {
             self.draggedGroup = group
             return NSItemProvider(object: group.id.uuidString as NSString)
