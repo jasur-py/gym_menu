@@ -24,69 +24,159 @@ struct TrainingGroupView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                ForEach(groupViewModel.groups) { group in
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(group.color)
-                            .frame(width: 20, height: 20)
-                        
-                        Text(group.name)
-                            .font(.headline)
-                        
-                        Spacer()
-                        
-                        if group.name != "All Exercises" {
-                            HStack(spacing: 20) {
-                                // Edit button - MUST be visible (blue pencil icon)
-                                Button(action: {
-                                    editingGroup = group
-                                }) {
-                                    Image(systemName: "pencil")
-                                        .font(.title3)
-                                        .foregroundColor(.blue)
-                                        .frame(width: 44, height: 44)
-                                        .contentShape(Rectangle())
+            ZStack(alignment: .bottomTrailing) {
+                LinearGradient(
+                    colors: [Color(hex: "3d7b8c"), Color(hex: "2c5f6f"), Color(hex: "234752")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                List {
+                    ForEach(groupViewModel.groups) { group in
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(group.color)
+                                .frame(width: 20, height: 20)
+                            
+                            Text(group.name)
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            if group.name != "All Exercises" {
+                                HStack(spacing: 12) {
+                                    // Edit button - MUST be visible (blue pencil icon)
+                                    Button(action: {
+                                        editingGroup = group
+                                    }) {
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.blue)
+                                            .frame(width: 32, height: 32)
+                                            .background(
+                                                Circle()
+                                                    .fill(.ultraThinMaterial)
+                                            )
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                            )
+                                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    
+                                    // Delete button (red trash icon)
+                                    Button(action: {
+                                        groupToDelete = group
+                                        showingDeleteAlert = true
+                                    }) {
+                                        Image(systemName: "trash")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(.red)
+                                            .frame(width: 32, height: 32)
+                                            .background(
+                                                Circle()
+                                                    .fill(.ultraThinMaterial)
+                                            )
+                                            .overlay(
+                                                Circle()
+                                                    .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                            )
+                                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
-                                
-                                // Delete button (red trash icon)
-                                Button(action: {
-                                    groupToDelete = group
-                                    showingDeleteAlert = true
-                                }) {
-                                    Image(systemName: "trash")
-                                        .font(.title3)
-                                        .foregroundColor(.red)
-                                        .frame(width: 44, height: 44)
-                                        .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
+                                .padding(.trailing, 4)
                             }
-                            .padding(.trailing, 8)
                         }
+                        .padding(.vertical, 6)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
+                                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                                .padding(.vertical, 4)
+                        )
                     }
-                    .padding(.vertical, 4)
+                    .onMove(perform: groupViewModel.moveGroup)
                 }
-                .onMove(perform: groupViewModel.moveGroup)
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Training Groups")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") {
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                
+                VStack(spacing: 12) {
+                    Button(action: {
                         dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    .buttonStyle(.plain)
+                    
                     Button(action: {
                         showingAddGroup = true
                     }) {
                         Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                     }
+                    .buttonStyle(.plain)
                 }
+                .padding(.trailing, 16)
+                .padding(.bottom, 24)
             }
+            .navigationTitle("Training Groups")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingAddGroup) {
                 AddGroupView(groupViewModel: groupViewModel)
             }
@@ -140,57 +230,139 @@ struct AddGroupView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("Group Name")) {
-                    TextField("Group Name", text: $groupName)
-                }
+            ZStack(alignment: .bottomTrailing) {
+                LinearGradient(
+                    colors: [Color(hex: "3d7b8c"), Color(hex: "2c5f6f"), Color(hex: "234752")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
-                Section(header: Text("Color")) {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 15) {
-                        ForEach(Array(predefinedColors.enumerated()), id: \.offset) { index, color in
-                            Button(action: {
-                                selectedColor = color
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(color)
-                                        .frame(width: 60, height: 60)
-                                    
-                                    if isColorSelected(color, currentColor: selectedColor) {
-                                        Circle()
-                                            .stroke(Color.primary, lineWidth: 3)
-                                            .frame(width: 60, height: 60)
-                                        
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.primary)
-                                            .font(.title3)
-                                            .fontWeight(.bold)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        LiquidGlassSettingCard(
+                            icon: "textformat",
+                            title: "Group Name",
+                            iconColor: .blue
+                        ) {
+                            TextField("Group Name", text: $groupName)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.ultraThinMaterial)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                )
+                        }
+                        
+                        LiquidGlassSettingCard(
+                            icon: "paintpalette.fill",
+                            title: "Color",
+                            iconColor: .purple
+                        ) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 15) {
+                                ForEach(Array(predefinedColors.enumerated()), id: \.offset) { index, color in
+                                    Button(action: {
+                                        selectedColor = color
+                                    }) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(color)
+                                                .frame(width: 60, height: 60)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                                )
+                                                .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+                                            
+                                            if isColorSelected(color, currentColor: selectedColor) {
+                                                Circle()
+                                                    .stroke(Color.primary, lineWidth: 3)
+                                                    .frame(width: 60, height: 60)
+                                                
+                                                Image(systemName: "checkmark")
+                                                    .foregroundColor(.primary)
+                                                    .font(.title3)
+                                                    .fontWeight(.bold)
+                                            }
+                                        }
                                     }
+                                    .buttonStyle(.plain)
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .padding(.vertical, 4)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 30)
                 }
-            }
-            .navigationTitle("New Group")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                
+                VStack(spacing: 12) {
+                    Button(action: {
                         dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    .buttonStyle(.plain)
+                    
+                    Button(action: {
                         let newGroup = TrainingGroup(name: groupName, color: selectedColor)
                         groupViewModel.addGroup(newGroup)
                         dismiss()
+                    }) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                     }
+                    .buttonStyle(.plain)
                     .disabled(groupName.isEmpty)
+                    .opacity(groupName.isEmpty ? 0.4 : 1)
                 }
+                .padding(.trailing, 16)
+                .padding(.bottom, 24)
             }
+            .navigationTitle("New Group")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     
@@ -239,59 +411,141 @@ struct EditGroupView: View {
     
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("Group Name")) {
-                    TextField("Group Name", text: $groupName)
-                }
+            ZStack(alignment: .bottomTrailing) {
+                LinearGradient(
+                    colors: [Color(hex: "3d7b8c"), Color(hex: "2c5f6f"), Color(hex: "234752")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
-                Section(header: Text("Color")) {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 15) {
-                        ForEach(Array(predefinedColors.enumerated()), id: \.offset) { index, color in
-                            Button(action: {
-                                selectedColor = color
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(color)
-                                        .frame(width: 60, height: 60)
-                                    
-                                    if isColorSelected(color, currentColor: selectedColor) {
-                                        Circle()
-                                            .stroke(Color.primary, lineWidth: 3)
-                                            .frame(width: 60, height: 60)
-                                        
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.primary)
-                                            .font(.title3)
-                                            .fontWeight(.bold)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        LiquidGlassSettingCard(
+                            icon: "textformat",
+                            title: "Group Name",
+                            iconColor: .blue
+                        ) {
+                            TextField("Group Name", text: $groupName)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.ultraThinMaterial)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                                )
+                        }
+                        
+                        LiquidGlassSettingCard(
+                            icon: "paintpalette.fill",
+                            title: "Color",
+                            iconColor: .purple
+                        ) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 15) {
+                                ForEach(Array(predefinedColors.enumerated()), id: \.offset) { index, color in
+                                    Button(action: {
+                                        selectedColor = color
+                                    }) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(color)
+                                                .frame(width: 60, height: 60)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                                )
+                                                .shadow(color: color.opacity(0.3), radius: 8, x: 0, y: 4)
+                                            
+                                            if isColorSelected(color, currentColor: selectedColor) {
+                                                Circle()
+                                                    .stroke(Color.primary, lineWidth: 3)
+                                                    .frame(width: 60, height: 60)
+                                                
+                                                Image(systemName: "checkmark")
+                                                    .foregroundColor(.primary)
+                                                    .font(.title3)
+                                                    .fontWeight(.bold)
+                                            }
+                                        }
                                     }
+                                    .buttonStyle(.plain)
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .padding(.vertical, 4)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 30)
                 }
-            }
-            .navigationTitle("Edit Group")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                
+                VStack(spacing: 12) {
+                    Button(action: {
                         dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    .buttonStyle(.plain)
+                    
+                    Button(action: {
                         group.name = groupName
                         group.color = selectedColor
                         groupViewModel.updateGroup(group)
                         onSave?()
                         dismiss()
+                    }) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
                     }
+                    .buttonStyle(.plain)
                     .disabled(groupName.isEmpty)
+                    .opacity(groupName.isEmpty ? 0.4 : 1)
                 }
+                .padding(.trailing, 16)
+                .padding(.bottom, 24)
             }
+            .navigationTitle("Edit Group")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
     

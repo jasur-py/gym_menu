@@ -187,9 +187,27 @@ struct CalendarSection: View {
                 collapsedView
             }
         }
-        .background(Color(hex: "636e72"))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(hex: "636e72"))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .opacity(0.25)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isExpanded)
     }
     
@@ -790,13 +808,13 @@ struct WorkoutProgramsSection: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: 24)
                                 .fill(.ultraThinMaterial)
-                                .opacity(0.15)
+                                .opacity(0.2)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 24)
                                 .stroke(
                                     LinearGradient(
-                                        colors: [Color.white.opacity(0.25), Color.white.opacity(0.05)],
+                                        colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
@@ -818,20 +836,30 @@ struct WorkoutProgramsSection: View {
                                 .padding(.leading, 16)
                                 .zIndex(10) // Keep title above everything
                             
-                            // Training Group Labels Area (below title)
-                            ZStack {
-                                let filteredGroups = groupViewModel.groups.filter { $0.name != "All Exercises" }
-                                
-                                ForEach(Array(filteredGroups.enumerated()), id: \.element.id) { index, group in
-                                    WorkoutProgramLabel(
-                                        title: group.name,
-                                        position: getLabelPosition(for: index, total: filteredGroups.count)
-                                    )
+                            // Training Group Pills Area (below title)
+                            let filteredGroups = groupViewModel.groups.filter { $0.name != "All Exercises" }
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10),
+                                    GridItem(.flexible(), spacing: 10)
+                                ],
+                                spacing: 10
+                            ) {
+                                ForEach(filteredGroups) { group in
+                                    NavigationLink(destination: WorkoutGroupView(group: group)) {
+                                        WorkoutProgramPillButton(
+                                            title: group.name,
+                                            color: group.color
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .frame(height: 130) // Space below title
+                            .frame(height: 130)
                             .padding(.leading, 16)
+                            .padding(.trailing, 8)
                         }
                         
                         // Right side: Vertical FAB Button (equal margins all sides)
@@ -931,6 +959,32 @@ struct WorkoutProgramLabel: View {
                     y: geometry.size.height * position.y
                 )
         }
+    }
+}
+
+// MARK: - Workout Program Pill Button
+struct WorkoutProgramPillButton: View {
+    let title: String
+    let color: Color
+    
+    var body: some View {
+        Text(title)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, minHeight: 30)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(color.opacity(0.9))
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                    )
+                    .shadow(color: color.opacity(0.35), radius: 6, x: 0, y: 3)
+            )
     }
 }
 

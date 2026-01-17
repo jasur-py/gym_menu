@@ -11,19 +11,121 @@ struct ExerciseDetailView: View {
     var onDelete: ((Exercise) -> Void)?
     
     var body: some View {
-        Form {
-            detailsSection
-            groupsSection
-            setsSection
-            notesSection
-            imageSection
+        ZStack(alignment: .bottomTrailing) {
+            LinearGradient(
+                colors: [Color(hex: "3d7b8c"), Color(hex: "2c5f6f"), Color(hex: "234752")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            Form {
+                detailsSection
+                    .listRowBackground(glassRowBackground)
+                groupsSection
+                    .listRowBackground(glassRowBackground)
+                setsSection
+                    .listRowBackground(glassRowBackground)
+                notesSection
+                    .listRowBackground(glassRowBackground)
+                imageSection
+                    .listRowBackground(glassRowBackground)
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            
+            VStack(spacing: 12) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                        )
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                
+                if !viewModel.isNewExercise, onDelete != nil {
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.red)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                Button(action: {
+                    viewModel.saveExercise()
+                    dismiss()
+                }) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                        .frame(width: 50, height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1.5
+                                        )
+                                )
+                        )
+                        .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.exercise.name.isEmpty)
+                .opacity(viewModel.exercise.name.isEmpty ? 0.4 : 1)
+            }
+            .padding(.trailing, 16)
+            .padding(.bottom, 24)
         }
         .navigationTitle(viewModel.isNewExercise ? "New Exercise" : "Edit Exercise")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            toolbarLeadingContent
-            toolbarTrailingContent
-        }
+        .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.clear, for: .navigationBar)
         .alert("Delete Exercise", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -219,28 +321,21 @@ struct ExerciseDetailView: View {
         }
     }
     
-    private var toolbarLeadingContent: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarLeading) {
-            Button("Cancel") {
-                dismiss()
-            }
-        }
-    }
-    
-    private var toolbarTrailingContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigationBarTrailing) {
-            if !viewModel.isNewExercise, onDelete != nil {
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "trash")
-                }
-            }
-            Button("Save") {
-                viewModel.saveExercise()
-                dismiss()
-            }
-            .disabled(viewModel.exercise.name.isEmpty)
-        }
+    private var glassRowBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+            .padding(.vertical, 4)
     }
 }
