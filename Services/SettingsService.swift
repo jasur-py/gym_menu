@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import UIKit
 import Combine
+import UserNotifications
 
 enum WeightUnit: String, Codable, CaseIterable {
     case kg = "kg"
@@ -72,6 +73,12 @@ class SettingsService: ObservableObject {
         }
     }
     
+    @Published var isNotificationsEnabled: Bool {
+        didSet {
+            saveSettings()
+        }
+    }
+    
     private let settingsFileName = "settings.json"
     private let backgroundColorKey = "backgroundColor"
     
@@ -87,6 +94,7 @@ class SettingsService: ObservableObject {
         self.appearanceMode = .system
         self.isQuoteEnabled = true
         self.isSoundEnabled = true
+        self.isNotificationsEnabled = false
         
         // Then load saved values
         let loadedSettings = Self.loadSettings(settingsFileURL: settingsFileURL)
@@ -102,13 +110,16 @@ class SettingsService: ObservableObject {
         if let savedSoundEnabled = loadedSettings.isSoundEnabled {
             self.isSoundEnabled = savedSoundEnabled
         }
+        if let savedNotificationsEnabled = loadedSettings.isNotificationsEnabled {
+            self.isNotificationsEnabled = savedNotificationsEnabled
+        }
         
         self.backgroundColor = Self.loadBackgroundColor(backgroundColorKey: backgroundColorKey)
     }
     
-    private static func loadSettings(settingsFileURL: URL) -> (weightUnit: WeightUnit?, appearanceMode: AppearanceMode?, isQuoteEnabled: Bool?, isSoundEnabled: Bool?) {
+    private static func loadSettings(settingsFileURL: URL) -> (weightUnit: WeightUnit?, appearanceMode: AppearanceMode?, isQuoteEnabled: Bool?, isSoundEnabled: Bool?, isNotificationsEnabled: Bool?) {
         guard FileManager.default.fileExists(atPath: settingsFileURL.path) else {
-            return (nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil)
         }
         
         do {
@@ -117,10 +128,10 @@ class SettingsService: ObservableObject {
             let settings = try decoder.decode(SettingsData.self, from: data)
             let weightUnit = WeightUnit(rawValue: settings.weightUnit)
             let appearanceMode = settings.appearanceMode.flatMap { AppearanceMode(rawValue: $0) }
-            return (weightUnit, appearanceMode, settings.isQuoteEnabled, settings.isSoundEnabled)
+            return (weightUnit, appearanceMode, settings.isQuoteEnabled, settings.isSoundEnabled, settings.isNotificationsEnabled)
         } catch {
             print("Error loading settings: \(error.localizedDescription)")
-            return (nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil)
         }
     }
     
@@ -129,7 +140,8 @@ class SettingsService: ObservableObject {
             weightUnit: weightUnit.rawValue,
             appearanceMode: appearanceMode.rawValue,
             isQuoteEnabled: isQuoteEnabled,
-            isSoundEnabled: isSoundEnabled
+            isSoundEnabled: isSoundEnabled,
+            isNotificationsEnabled: isNotificationsEnabled
         )
         do {
             let encoder = JSONEncoder()
@@ -177,6 +189,17 @@ class SettingsService: ObservableObject {
             }
         }
     }
+    
+    func requestNotificationAuthorization() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            DispatchQueue.main.async {
+                if !granted {
+                    self.isNotificationsEnabled = false
+                }
+            }
+        }
+    }
 }
 
 private struct SettingsData: Codable {
@@ -184,5 +207,6 @@ private struct SettingsData: Codable {
     var appearanceMode: String?
     var isQuoteEnabled: Bool?
     var isSoundEnabled: Bool?
+    var isNotificationsEnabled: Bool?
 }
 

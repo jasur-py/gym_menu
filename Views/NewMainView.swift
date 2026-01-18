@@ -11,6 +11,7 @@ struct NewMainView: View {
     
     @State private var isSettingsOpen = false
     @ObservedObject var quoteService = QuoteService.shared
+    @ObservedObject var settingsService = SettingsService.shared
     @State private var refreshTrigger = UUID()
     
     var body: some View {
@@ -130,9 +131,12 @@ struct NewMainView: View {
                 
                 // Notifications Button
                 Button(action: {
-                    print("Notifications tapped")
+                    settingsService.isNotificationsEnabled.toggle()
+                    if settingsService.isNotificationsEnabled {
+                        settingsService.requestNotificationAuthorization()
+                    }
                 }) {
-                    Image(systemName: "bell.fill")
+                    Image(systemName: settingsService.isNotificationsEnabled ? "bell.fill" : "bell.slash.fill")
                         .font(.system(size: 20))
                         .foregroundColor(.white)
                         .frame(width: 44, height: 44)
@@ -838,28 +842,31 @@ struct WorkoutProgramsSection: View {
                             
                             // Training Group Pills Area (below title)
                             let filteredGroups = groupViewModel.groups.filter { $0.name != "All Exercises" }
-                            LazyVGrid(
-                                columns: [
-                                    GridItem(.flexible(), spacing: 10),
-                                    GridItem(.flexible(), spacing: 10),
-                                    GridItem(.flexible(), spacing: 10)
-                                ],
-                                spacing: 10
-                            ) {
-                                ForEach(filteredGroups) { group in
-                                    NavigationLink(destination: WorkoutGroupView(group: group)) {
-                                        WorkoutProgramPillButton(
-                                            title: group.name,
-                                            color: group.color
-                                        )
+                            let pillRows = splitGroupsIntoRows(filteredGroups, maxRows: 3)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    ForEach(pillRows.indices, id: \.self) { rowIndex in
+                                        HStack(spacing: 8) {
+                                            ForEach(pillRows[rowIndex]) { group in
+                                                NavigationLink(destination: WorkoutGroupView(group: group)) {
+                                                    WorkoutProgramPillButton(
+                                                        title: group.name,
+                                                        color: group.color
+                                                    )
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
                                     }
-                                    .buttonStyle(.plain)
                                 }
+                                .padding(.top, 16)
+                                .padding(.bottom, 16)
+                                .padding(.trailing, 8)
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 130)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(height: 130, alignment: .topLeading)
+                            .clipped()
                             .padding(.leading, 16)
-                            .padding(.trailing, 8)
                         }
                         
                         // Right side: Vertical FAB Button (equal margins all sides)
@@ -973,9 +980,9 @@ struct WorkoutProgramPillButton: View {
             .foregroundColor(.white)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, minHeight: 30)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 6)
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
             .background(
                 Capsule()
                     .fill(color.opacity(0.9))
@@ -986,6 +993,23 @@ struct WorkoutProgramPillButton: View {
                     .shadow(color: color.opacity(0.35), radius: 6, x: 0, y: 3)
             )
     }
+}
+
+private func splitGroupsIntoRows(_ groups: [TrainingGroup], maxRows: Int) -> [[TrainingGroup]] {
+    guard maxRows > 0 else { return [] }
+    let rows = min(maxRows, max(groups.count, 1))
+    let chunkSize = Int(ceil(Double(groups.count) / Double(rows)))
+    var result: [[TrainingGroup]] = []
+    var index = 0
+    
+    for _ in 0..<rows {
+        guard index < groups.count else { break }
+        let end = min(index + chunkSize, groups.count)
+        result.append(Array(groups[index..<end]))
+        index = end
+    }
+    
+    return result
 }
 
 // MARK: - Workout Program Card Content
