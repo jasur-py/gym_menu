@@ -10,6 +10,7 @@ struct NewMainView: View {
     }()
     
     @State private var isSettingsOpen = false
+    @State private var isSupplementsReminderOpen = false
     @ObservedObject var quoteService = QuoteService.shared
     @ObservedObject var settingsService = SettingsService.shared
     @State private var refreshTrigger = UUID()
@@ -28,13 +29,17 @@ struct NewMainView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 10)
                         
+                        // Workout Programs Section (flexible and responsive)
+                        WorkoutProgramsSection(refreshTrigger: $refreshTrigger)
+                            .padding(.top, 20)
+                        
                         // Calendar Section
                         CalendarSection()
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                         
-                        // Workout Programs Section (flexible and responsive)
-                        WorkoutProgramsSection(refreshTrigger: $refreshTrigger)
+                        supplementsReminderCard
+                            .padding(.horizontal, 20)
                             .padding(.top, 20)
                         
                         // Bottom spacing
@@ -86,6 +91,9 @@ struct NewMainView: View {
             .onAppear {
                 // Refresh workout programs when view appears
                 refreshTrigger = UUID()
+            }
+            .sheet(isPresented: $isSupplementsReminderOpen) {
+                SupplementsReminderPlaceholderView()
             }
         }
     }
@@ -148,6 +156,57 @@ struct NewMainView: View {
         .frame(height: 60)
     }
     
+    private var supplementsReminderCard: some View {
+        Button(action: {
+            isSupplementsReminderOpen = true
+        }) {
+            HStack(spacing: 12) {
+                Image(systemName: "pills.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.teal)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        Circle()
+                            .fill(Color.teal.opacity(0.2))
+                    )
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Supplements Reminder")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    Text("Open placeholder view")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+    
     // MARK: - Profile Picture
     private var profilePicture: some View {
         ZStack {
@@ -175,13 +234,10 @@ struct NewMainView: View {
 struct CalendarSection: View {
     @State private var isExpanded = false
     @State private var selectedDate = Date()
-    @State private var selectedPeriod: TimePeriod = .morning
+    @State private var scheduleByDateKey: [String: [UUID]] = [:]
+    @StateObject private var groupViewModel = TrainingGroupViewModel()
     
-    enum TimePeriod: String, CaseIterable {
-        case morning = "Morning"
-        case afternoon = "Afternoon"
-        case evening = "Evening"
-    }
+    private let dataService = DataPersistenceService.shared
     
     var body: some View {
         VStack(spacing: 0) {
@@ -213,6 +269,14 @@ struct CalendarSection: View {
         )
         .shadow(color: .black.opacity(0.15), radius: 10, x: 0, y: 4)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isExpanded)
+        .onAppear {
+            groupViewModel.loadGroups()
+            scheduleByDateKey = dataService.loadDaySchedule()
+            let today = Calendar.current.startOfDay(for: Date())
+            if !Calendar.current.isDate(selectedDate, inSameDayAs: today) {
+                selectedDate = today
+            }
+        }
     }
     
     private var collapsedView: some View {
@@ -291,33 +355,58 @@ struct CalendarSection: View {
             .padding(.horizontal, 20)
             
             // Horizontal Date Picker
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(datesForCurrentMonth, id: \.self) { date in
-                        DateButton(
-                            date: date,
-                            isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
-                            action: {
-                                selectedDate = date
-                            }
-                        )
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(datesForCurrentMonth, id: \.self) { date in
+                            let indicatorColors = colorsForDate(date)
+                            DateButton(
+                                date: date,
+                                isSelected: Calendar.current.isDate(date, inSameDayAs: selectedDate),
+                                indicatorColors: indicatorColors,
+                                action: {
+                                    selectedDate = date
+                                }
+                            )
+                            .id(date)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                }
+                .onAppear {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(normalizedSelectedDate, anchor: .center)
                     }
                 }
-                .padding(.horizontal, 20)
-            }
-            
-            // Time Period Selector
-            HStack(spacing: 12) {
-                ForEach(TimePeriod.allCases, id: \.self) { period in
-                    TimePeriodButton(
-                        title: period.rawValue,
-                        isSelected: selectedPeriod == period,
-                        action: {
-                            selectedPeriod = period
-                        }
-                    )
+                .onChange(of: selectedDate) { _, newDate in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        proxy.scrollTo(Calendar.current.startOfDay(for: newDate), anchor: .center)
+                    }
                 }
             }
+            
+            selectedDayGroupsSection
+            
+            NavigationLink(destination: DayPlanningView()) {
+                HStack(spacing: 10) {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 16, weight: .semibold))
+                    
+                    Text("Add or Edit your Schedule")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color(hex: "74b9ff"))
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                )
+                .shadow(color: Color(hex: "74b9ff").opacity(0.4), radius: 8, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
@@ -354,12 +443,75 @@ struct CalendarSection: View {
             selectedDate = newDate
         }
     }
+    
+    private func dateKey(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+    
+    private func colorsForDate(_ date: Date) -> [Color] {
+        let key = dateKey(for: date)
+        let ids = scheduleByDateKey[key] ?? []
+        let groups = groupViewModel.groups.filter { ids.contains($0.id) }
+        return groups.map(\.color)
+    }
+    
+    private var normalizedSelectedDate: Date {
+        Calendar.current.startOfDay(for: selectedDate)
+    }
+    
+    private var selectedDayGroupsSection: some View {
+        let groups = groupsForDate(selectedDate)
+        
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("Planned Groups")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.85))
+            
+            if groups.isEmpty {
+                Text("No groups planned")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.65))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 8)], alignment: .leading, spacing: 8) {
+                    ForEach(groups) { group in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(group.color)
+                                .frame(width: 8, height: 8)
+                            
+                            Text(group.name)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.12))
+                        .cornerRadius(10)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private func groupsForDate(_ date: Date) -> [TrainingGroup] {
+        let key = dateKey(for: date)
+        let ids = scheduleByDateKey[key] ?? []
+        return groupViewModel.groups.filter { ids.contains($0.id) }
+    }
 }
 
 // MARK: - Date Button
 struct DateButton: View {
     let date: Date
     let isSelected: Bool
+    let indicatorColors: [Color]
     let action: () -> Void
     
     private var dayNumber: String {
@@ -379,35 +531,31 @@ struct DateButton: View {
             VStack(spacing: 6) {
                 Text(dayName)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(isSelected ? .white : .white.opacity(0.6))
+                    .foregroundColor(isSelected ? .black : .white.opacity(0.6))
                 
                 Text(dayNumber)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(isSelected ? .white : .white)
+                    .foregroundColor(isSelected ? .black : .white)
+                
+                if !indicatorColors.isEmpty {
+                    HStack(spacing: 3) {
+                        ForEach(indicatorColors.prefix(3).indices, id: \.self) { index in
+                            Circle()
+                                .fill(indicatorColors[index])
+                                .frame(width: 6, height: 6)
+                        }
+                        
+                        if indicatorColors.count > 3 {
+                            Text("+\(indicatorColors.count - 3)")
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                    }
+                }
             }
             .frame(width: 60, height: 70)
-            .background(isSelected ? Color(hex: "74b9ff") : Color.white.opacity(0.15))
+            .background(isSelected ? Color(hex: "dfe6e9") : Color.white.opacity(0.15))
             .cornerRadius(12)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
-
-// MARK: - Time Period Button
-struct TimePeriodButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(isSelected ? .white : .white.opacity(0.7))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(isSelected ? Color(hex: "74b9ff") : Color.white.opacity(0.15))
-                .cornerRadius(10)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -606,6 +754,44 @@ struct SettingsSideSheet: View {
                             isOn: $settingsService.isQuoteEnabled
                         )
                         
+                        // Workout Reminder Setting
+                        LiquidGlassSettingCard(
+                            icon: "alarm.fill",
+                            title: "Workout Reminder",
+                            iconColor: .red
+                        ) {
+                            VStack(spacing: 10) {
+                                HStack {
+                                    Text("Reminder")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    Toggle("", isOn: $settingsService.isWorkoutReminderEnabled)
+                                        .labelsHidden()
+                                        .tint(.red)
+                                }
+                                
+                                if settingsService.isWorkoutReminderEnabled {
+                                    DatePicker(
+                                        "Time",
+                                        selection: $settingsService.workoutReminderTime,
+                                        displayedComponents: .hourAndMinute
+                                    )
+                                    .datePickerStyle(.compact)
+                                    
+                                    TextField("Message", text: $settingsService.workoutReminderMessage)
+                                        .textInputAutocapitalization(.sentences)
+                                        .disableAutocorrection(true)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 8)
+                                        .background(Color.white.opacity(0.12))
+                                        .cornerRadius(10)
+                                }
+                            }
+                        }
+                        
                         // Sound Toggle
                         LiquidGlassToggleCard(
                             icon: "speaker.wave.3.fill",
@@ -627,6 +813,61 @@ struct SettingsSideSheet: View {
             .shadow(color: .black.opacity(0.2), radius: 10, x: -5, y: 0)
         }
         .ignoresSafeArea()
+    }
+}
+
+struct SupplementsReminderPlaceholderView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(.systemBackground)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 16) {
+                    Image(systemName: "pills.fill")
+                        .font(.system(size: 40, weight: .semibold))
+                        .foregroundColor(.teal)
+                    
+                    Text("Supplements Reminder")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                    
+                    Text("Placeholder view. We’ll add scheduling and tracking here soon.")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(24)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.ultraThinMaterial)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 6)
+                .padding(.horizontal, 32)
+            }
+            .navigationTitle("Supplements")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -797,7 +1038,7 @@ struct WorkoutProgramsSection: View {
             NavigationLink(destination: ExerciseListView(viewModel: viewModel, preselectedGroupId: nil)) {
                 ZStack {
                     // Background with gradient
-                    RoundedRectangle(cornerRadius: 24)
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(
                             LinearGradient(
                                 colors: [
@@ -810,12 +1051,12 @@ struct WorkoutProgramsSection: View {
                             )
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 24)
+                            RoundedRectangle(cornerRadius: 16)
                                 .fill(.ultraThinMaterial)
                                 .opacity(0.2)
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 24)
+                            RoundedRectangle(cornerRadius: 16)
                                 .stroke(
                                     LinearGradient(
                                         colors: [Color.primary.opacity(0.2), Color.primary.opacity(0.05)],

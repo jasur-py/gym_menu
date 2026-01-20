@@ -78,6 +78,7 @@ struct WorkoutGroupView: View {
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.inline)
+        .overlay(restCompleteOverlay)
         .onAppear {
             viewModel.groupViewModel = groupViewModel
             viewModel.selectedGroupId = group.id
@@ -243,6 +244,56 @@ struct WorkoutGroupView: View {
         let seconds = totalSeconds % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
+    
+    private var restCompleteOverlay: some View {
+        Group {
+            if timerStore.showRestCompleteOverlay {
+                ZStack {
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation {
+                                timerStore.showRestCompleteOverlay = false
+                            }
+                        }
+                    
+                    VStack(spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundColor(.green)
+                        
+                        Text("Rest Complete")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.primary)
+                        
+                        Text("Your rest time is over.")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18)
+                            .fill(.ultraThinMaterial)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 6)
+                    .padding(.horizontal, 32)
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: timerStore.showRestCompleteOverlay)
+            }
+        }
+    }
 }
 
 final class WorkoutTimerStore: ObservableObject {
@@ -253,6 +304,7 @@ final class WorkoutTimerStore: ObservableObject {
     @Published var workoutIsRunning: Bool = false
     @Published var restRemainingSeconds: Int = 0
     @Published var restIsRunning: Bool = false
+    @Published var showRestCompleteOverlay: Bool = false
     
     private var timer: Timer?
     
@@ -290,6 +342,7 @@ final class WorkoutTimerStore: ObservableObject {
     func stopRest() {
         restIsRunning = false
         restRemainingSeconds = 0
+        showRestCompleteOverlay = false
         stopTimerIfPossible()
     }
     
@@ -314,10 +367,14 @@ final class WorkoutTimerStore: ObservableObject {
             restRemainingSeconds = max(0, restRemainingSeconds - 1)
             if restRemainingSeconds == 0 {
                 restIsRunning = false
+                showRestCompleteOverlay = true
                 sendNotificationIfEnabled(
                     title: "Rest Complete",
                     body: "Your rest timer is done."
                 )
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    self.showRestCompleteOverlay = false
+                }
             }
         }
         stopTimerIfPossible()

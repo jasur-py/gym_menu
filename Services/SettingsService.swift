@@ -79,6 +79,27 @@ class SettingsService: ObservableObject {
         }
     }
     
+    @Published var isWorkoutReminderEnabled: Bool {
+        didSet {
+            saveSettings()
+            updateWorkoutReminderSchedule()
+        }
+    }
+    
+    @Published var workoutReminderTime: Date {
+        didSet {
+            saveSettings()
+            updateWorkoutReminderSchedule()
+        }
+    }
+    
+    @Published var workoutReminderMessage: String {
+        didSet {
+            saveSettings()
+            updateWorkoutReminderSchedule()
+        }
+    }
+    
     private let settingsFileName = "settings.json"
     private let backgroundColorKey = "backgroundColor"
     
@@ -95,6 +116,9 @@ class SettingsService: ObservableObject {
         self.isQuoteEnabled = true
         self.isSoundEnabled = true
         self.isNotificationsEnabled = false
+        self.isWorkoutReminderEnabled = false
+        self.workoutReminderTime = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+        self.workoutReminderMessage = ""
         
         // Then load saved values
         let loadedSettings = Self.loadSettings(settingsFileURL: settingsFileURL)
@@ -113,13 +137,23 @@ class SettingsService: ObservableObject {
         if let savedNotificationsEnabled = loadedSettings.isNotificationsEnabled {
             self.isNotificationsEnabled = savedNotificationsEnabled
         }
+        if let savedWorkoutReminderEnabled = loadedSettings.isWorkoutReminderEnabled {
+            self.isWorkoutReminderEnabled = savedWorkoutReminderEnabled
+        }
+        if let savedWorkoutReminderTime = loadedSettings.workoutReminderTime {
+            self.workoutReminderTime = savedWorkoutReminderTime
+        }
+        if let savedWorkoutReminderMessage = loadedSettings.workoutReminderMessage, !savedWorkoutReminderMessage.isEmpty {
+            self.workoutReminderMessage = savedWorkoutReminderMessage
+        }
         
         self.backgroundColor = Self.loadBackgroundColor(backgroundColorKey: backgroundColorKey)
+        updateWorkoutReminderSchedule()
     }
     
-    private static func loadSettings(settingsFileURL: URL) -> (weightUnit: WeightUnit?, appearanceMode: AppearanceMode?, isQuoteEnabled: Bool?, isSoundEnabled: Bool?, isNotificationsEnabled: Bool?) {
+    private static func loadSettings(settingsFileURL: URL) -> (weightUnit: WeightUnit?, appearanceMode: AppearanceMode?, isQuoteEnabled: Bool?, isSoundEnabled: Bool?, isNotificationsEnabled: Bool?, isWorkoutReminderEnabled: Bool?, workoutReminderTime: Date?, workoutReminderMessage: String?) {
         guard FileManager.default.fileExists(atPath: settingsFileURL.path) else {
-            return (nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil)
         }
         
         do {
@@ -128,10 +162,20 @@ class SettingsService: ObservableObject {
             let settings = try decoder.decode(SettingsData.self, from: data)
             let weightUnit = WeightUnit(rawValue: settings.weightUnit)
             let appearanceMode = settings.appearanceMode.flatMap { AppearanceMode(rawValue: $0) }
-            return (weightUnit, appearanceMode, settings.isQuoteEnabled, settings.isSoundEnabled, settings.isNotificationsEnabled)
+            let reminderTime = settings.workoutReminderTime.flatMap { Date(timeIntervalSince1970: $0) }
+            return (
+                weightUnit,
+                appearanceMode,
+                settings.isQuoteEnabled,
+                settings.isSoundEnabled,
+                settings.isNotificationsEnabled,
+                settings.isWorkoutReminderEnabled,
+                reminderTime,
+                settings.workoutReminderMessage
+            )
         } catch {
             print("Error loading settings: \(error.localizedDescription)")
-            return (nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil)
         }
     }
     
@@ -141,7 +185,10 @@ class SettingsService: ObservableObject {
             appearanceMode: appearanceMode.rawValue,
             isQuoteEnabled: isQuoteEnabled,
             isSoundEnabled: isSoundEnabled,
-            isNotificationsEnabled: isNotificationsEnabled
+            isNotificationsEnabled: isNotificationsEnabled,
+            isWorkoutReminderEnabled: isWorkoutReminderEnabled,
+            workoutReminderTime: workoutReminderTime.timeIntervalSince1970,
+            workoutReminderMessage: workoutReminderMessage
         )
         do {
             let encoder = JSONEncoder()
@@ -200,6 +247,48 @@ class SettingsService: ObservableObject {
             }
         }
     }
+    
+    private func updateWorkoutReminderSchedule() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["workoutReminder"])
+        
+        guard isWorkoutReminderEnabled else { return }
+        
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .authorized:
+                self.scheduleWorkoutReminder()
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                    DispatchQueue.main.async {
+                        self.isNotificationsEnabled = granted
+                        self.isWorkoutReminderEnabled = granted
+                    }
+                    if granted {
+                        self.scheduleWorkoutReminder()
+                    }
+                }
+            default:
+                DispatchQueue.main.async {
+                    self.isWorkoutReminderEnabled = false
+                }
+            }
+        }
+    }
+    
+    private func scheduleWorkoutReminder() {
+        let content = UNMutableNotificationContent()
+        content.title = "Workout Reminder"
+        let trimmedMessage = workoutReminderMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        content.body = trimmedMessage.isEmpty ? "Workout Reminder" : trimmedMessage
+        content.sound = .default
+        
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute], from: workoutReminderTime)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        let request = UNNotificationRequest(identifier: "workoutReminder", content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
 }
 
 private struct SettingsData: Codable {
@@ -208,5 +297,8 @@ private struct SettingsData: Codable {
     var isQuoteEnabled: Bool?
     var isSoundEnabled: Bool?
     var isNotificationsEnabled: Bool?
+    var isWorkoutReminderEnabled: Bool?
+    var workoutReminderTime: Double?
+    var workoutReminderMessage: String?
 }
 

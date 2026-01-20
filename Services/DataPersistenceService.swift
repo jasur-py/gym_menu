@@ -6,6 +6,7 @@ class DataPersistenceService {
     
     private let fileName = "exercises.json"
     private let groupsFileName = "training_groups.json"
+    private let scheduleFileName = "day_schedule.json"
     
     private init() {}
     
@@ -17,6 +18,11 @@ class DataPersistenceService {
     private var groupsFileURL: URL {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return documentsDirectory.appendingPathComponent(groupsFileName)
+    }
+    
+    private var scheduleFileURL: URL {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return documentsDirectory.appendingPathComponent(scheduleFileName)
     }
     
     func loadExercises() -> [Exercise] {
@@ -72,6 +78,35 @@ class DataPersistenceService {
             try data.write(to: groupsFileURL)
         } catch {
             print("Error saving training groups: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Day Planning Schedule Persistence
+    
+    func loadDaySchedule() -> [String: [UUID]] {
+        guard FileManager.default.fileExists(atPath: scheduleFileURL.path) else {
+            return [:]
+        }
+        
+        do {
+            let data = try Data(contentsOf: scheduleFileURL)
+            let decoder = JSONDecoder()
+            let schedule = try decoder.decode([String: [UUID]].self, from: data)
+            return schedule
+        } catch {
+            print("Error loading day schedule: \(error.localizedDescription)")
+            return [:]
+        }
+    }
+    
+    func saveDaySchedule(_ schedule: [String: [UUID]]) {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let data = try encoder.encode(schedule)
+            try data.write(to: scheduleFileURL)
+        } catch {
+            print("Error saving day schedule: \(error.localizedDescription)")
         }
     }
 }
