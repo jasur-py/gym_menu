@@ -42,6 +42,10 @@ struct NewMainView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                         
+                        statsOverviewSection
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                        
                         // Bottom spacing
                         Spacer()
                             .frame(height: 100)
@@ -189,7 +193,13 @@ struct NewMainView: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "00b894"), Color(hex: "00b894").opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
@@ -205,6 +215,80 @@ struct NewMainView: View {
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
+    }
+    
+    private var statsOverviewSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Stats Overview")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            HStack(spacing: 12) {
+                LiquidGlassStatCard(title: "Today", value: "1,250 kg")
+                LiquidGlassStatCard(title: "Week", value: "8,430 kg")
+            }
+            
+            HStack(spacing: 12) {
+                LiquidGlassStatCard(title: "Month", value: "31,780 kg")
+                LiquidGlassStatCard(title: "Overall", value: "214,600 kg")
+            }
+            
+            LiquidGlassChartCard(title: "Weekly Activity") {
+                WeeklyActivityChartView(
+                    values: [2, 3, 0, 4, 5, 1, 2],
+                    labels: ["M", "T", "W", "Th", "F", "S", "S"]
+                )
+            }
+            
+            HStack(spacing: 12) {
+                LiquidGlassChartCard(title: "Supplement Split") {
+                    StackedColumnChartView(
+                        columns: [
+                            [0.3, 0.4, 0.3],
+                            [0.2, 0.5, 0.3],
+                            [0.1, 0.3, 0.6],
+                            [0.4, 0.4, 0.2],
+                            [0.25, 0.35, 0.4]
+                        ],
+                        colors: [Color.teal, Color.blue, Color.purple],
+                        labels: ["AM", "Mid", "PM", "AM", "PM"]
+                    )
+                }
+                
+                LiquidGlassChartCard(title: "Daily Goal") {
+                    MultiSegmentGaugeView(
+                        segments: [
+                            (0.35, Color.green),
+                            (0.25, Color.yellow),
+                            (0.2, Color.orange),
+                            (0.2, Color.red)
+                        ],
+                        value: 0.72
+                    )
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
     // MARK: - Profile Picture
@@ -280,29 +364,55 @@ struct CalendarSection: View {
     }
     
     private var collapsedView: some View {
-        Button(action: {
-            isExpanded.toggle()
-        }) {
-            HStack {
-                Text("Calendar")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                Text(todayDateString)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white.opacity(0.8))
-                
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
-                    .rotationEffect(.degrees(0))
+        VStack(spacing: 6) {
+            Button(action: {
+                isExpanded.toggle()
+            }) {
+                HStack {
+                    Text("Calendar")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Text(todayDateString)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.8))
+                        .rotationEffect(.degrees(0))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .buttonStyle(PlainButtonStyle())
+            
+            let todayGroups = groupsForDate(Date())
+            if !todayGroups.isEmpty {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90), spacing: 8)], alignment: .leading, spacing: 8) {
+                    ForEach(todayGroups) { group in
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(group.color)
+                                .frame(width: 8, height: 8)
+                            
+                            Text(group.name)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+            }
         }
-        .buttonStyle(PlainButtonStyle())
     }
     
     private var expandedView: some View {
@@ -665,6 +775,7 @@ struct QuoteAlertView: View {
 struct SettingsSideSheet: View {
     @Binding var isOpen: Bool
     @ObservedObject var settingsService = SettingsService.shared
+    @ObservedObject var supplementsService = SupplementsReminderService.shared
     
     var body: some View {
         HStack(spacing: 0) {
@@ -792,13 +903,13 @@ struct SettingsSideSheet: View {
                             }
                         }
                         
-                        // Sound Toggle
+                        // Supplement Reminder Sound
                         LiquidGlassToggleCard(
-                            icon: "speaker.wave.3.fill",
-                            title: "Sound",
-                            subtitle: "Notifications & timer sounds",
-                            iconColor: .green,
-                            isOn: $settingsService.isSoundEnabled
+                            icon: "pills.fill",
+                            title: "Supplement Reminder",
+                            subtitle: "Sound for supplement alerts",
+                            iconColor: .teal,
+                            isOn: $supplementsService.isSoundEnabled
                         )
                     }
                     .padding(.horizontal, 20)
@@ -818,6 +929,9 @@ struct SettingsSideSheet: View {
 
 struct SupplementsReminderPlaceholderView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var reminderService = SupplementsReminderService.shared
+    @State private var isEditorPresented = false
+    @State private var editingReminder: SupplementsReminder?
     
     var body: some View {
         NavigationStack {
@@ -825,49 +939,459 @@ struct SupplementsReminderPlaceholderView: View {
                 Color(.systemBackground)
                     .ignoresSafeArea()
                 
-                VStack(spacing: 16) {
-                    Image(systemName: "pills.fill")
-                        .font(.system(size: 40, weight: .semibold))
-                        .foregroundColor(.teal)
-                    
-                    Text("Supplements Reminder")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.primary)
-                    
-                    Text("Placeholder view. We’ll add scheduling and tracking here soon.")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        headerSection
+                        
+                        if reminderService.reminders.isEmpty {
+                            emptyStateCard
+                        } else {
+                            VStack(spacing: 12) {
+                                ForEach(reminderService.reminders) { reminder in
+                                    SupplementsReminderRow(
+                                        reminder: reminder,
+                                        repeatText: reminderService.repeatSummary(for: reminder),
+                                        onToggle: { updated in
+                                            reminderService.updateReminder(updated)
+                                        },
+                                        onEdit: {
+                                            editingReminder = reminder
+                                            isEditorPresented = true
+                                        },
+                                        onDelete: {
+                                            reminderService.deleteReminder(reminder)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    .padding(24)
                 }
-                .padding(24)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(.ultraThinMaterial)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 6)
-                .padding(.horizontal, 32)
             }
             .navigationTitle("Supplements")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Add") {
+                        editingReminder = nil
+                        isEditorPresented = true
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
                 }
             }
+            .sheet(isPresented: $isEditorPresented) {
+                SupplementsReminderEditorView(reminder: editingReminder) { updated in
+                    if editingReminder != nil {
+                        reminderService.updateReminder(updated)
+                    } else {
+                        reminderService.addReminder(updated)
+                    }
+                }
+            }
         }
+    }
+    
+    private var headerSection: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "pills.fill")
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundColor(.teal)
+            
+            Text("Supplements Reminder")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.primary)
+            
+            Text("Create reminders with repeat rules and times.")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var emptyStateCard: some View {
+        VStack(spacing: 10) {
+            Text("No reminders yet")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(.primary)
+            
+            Text("Tap Add to create your first supplements reminder.")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+struct SupplementsReminderRow: View {
+    let reminder: SupplementsReminder
+    let repeatText: String
+    let onToggle: (SupplementsReminder) -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "pills.fill")
+                    .foregroundColor(.teal)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(Color.teal.opacity(0.15)))
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(reminder.name.isEmpty ? "Supplement" : reminder.name)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                    
+                    Text(timeString(reminder.time) + " · " + repeatText)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.secondary)
+                    
+                    if !reminder.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(reminder.note)
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: Binding(
+                    get: { reminder.isEnabled },
+                    set: { newValue in
+                        var updated = reminder
+                        updated.isEnabled = newValue
+                        onToggle(updated)
+                    })
+                )
+                .labelsHidden()
+                .tint(.teal)
+            }
+            
+            HStack(spacing: 10) {
+                Button("Edit") { onEdit() }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.12))
+                    .cornerRadius(10)
+                
+                Button("Delete") { onDelete() }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.red.opacity(0.12))
+                    .cornerRadius(10)
+                
+                Spacer()
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+    }
+    
+    private func timeString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
+
+struct SupplementsReminderEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String
+    @State private var note: String
+    @State private var time: Date
+    @State private var startDate: Date
+    @State private var repeatRule: SupplementsRepeatRule
+    @State private var repeatEveryDays: Int
+    @State private var repeatForDays: Int
+    @State private var isEnabled: Bool
+    
+    private let reminderId: UUID
+    private let onSave: (SupplementsReminder) -> Void
+    
+    init(reminder: SupplementsReminder?, onSave: @escaping (SupplementsReminder) -> Void) {
+        let item = reminder ?? SupplementsReminder()
+        _name = State(initialValue: item.name)
+        _note = State(initialValue: item.note)
+        _time = State(initialValue: item.time)
+        _startDate = State(initialValue: item.startDate)
+        _repeatRule = State(initialValue: item.repeatRule)
+        _repeatEveryDays = State(initialValue: item.repeatEveryDays)
+        _repeatForDays = State(initialValue: item.repeatForDays)
+        _isEnabled = State(initialValue: item.isEnabled)
+        reminderId = item.id
+        self.onSave = onSave
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    LiquidGlassSettingCard(icon: "pills.fill", title: "Supplement", iconColor: .teal) {
+                        VStack(spacing: 12) {
+                            TextField("Name", text: $name)
+                                .textInputAutocapitalization(.words)
+                                .disableAutocorrection(true)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color.white.opacity(0.12))
+                                .cornerRadius(10)
+                            
+                            TextField("Note (optional)", text: $note)
+                                .textInputAutocapitalization(.sentences)
+                                .disableAutocorrection(true)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color.white.opacity(0.12))
+                                .cornerRadius(10)
+                        }
+                    }
+                    
+                    LiquidGlassSettingCard(icon: "clock.fill", title: "Time", iconColor: .blue) {
+                        DatePicker("Reminder Time", selection: $time, displayedComponents: .hourAndMinute)
+                            .datePickerStyle(.compact)
+                    }
+                    
+                    LiquidGlassSettingCard(icon: "calendar", title: "Repeat", iconColor: .purple) {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 8) {
+                                ForEach(SupplementsRepeatRule.allCases, id: \.self) { rule in
+                                    LiquidGlassOptionButton(
+                                        title: rule.title,
+                                        isSelected: repeatRule == rule
+                                    ) {
+                                        repeatRule = rule
+                                    }
+                                }
+                            }
+                            
+                            DatePicker("Start Day", selection: $startDate, displayedComponents: .date)
+                                .datePickerStyle(.compact)
+                            
+                            if repeatRule == .custom {
+                                VStack(spacing: 10) {
+                                    Stepper(value: $repeatEveryDays, in: 1...14) {
+                                        Text("Repeat every \(repeatEveryDays) day(s)")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    
+                                    Stepper(value: $repeatForDays, in: 1...90) {
+                                        Text("For \(repeatForDays) day(s)")
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    LiquidGlassSettingCard(icon: "bell.fill", title: "Status", iconColor: .teal) {
+                        Toggle("Enabled", isOn: $isEnabled)
+                            .tint(.teal)
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle("Reminder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        let reminder = SupplementsReminder(
+                            id: reminderId,
+                            name: name,
+                            time: time,
+                            startDate: startDate,
+                            repeatRule: repeatRule,
+                            repeatEveryDays: repeatEveryDays,
+                            repeatForDays: repeatForDays,
+                            isEnabled: isEnabled,
+                            note: note
+                        )
+                        onSave(reminder)
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct LiquidGlassStatCard: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.secondary)
+            
+            Text(value)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.primary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+struct LiquidGlassChartCard<Content: View>: View {
+    let title: String
+    let content: Content
+    
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary)
+            
+            content
+        }
+        .frame(maxWidth: .infinity)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.ultraThinMaterial)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+struct WeeklyActivityChartView: View {
+    let values: [Int]
+    let labels: [String]
+    
+    private var maxValue: Int {
+        max(values.max() ?? 1, 1)
+    }
+    
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            ForEach(values.indices, id: \.self) { index in
+                VStack(spacing: 6) {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.blue.opacity(0.8))
+                        .frame(height: barHeight(for: values[index]))
+                    
+                    Text(labels[index])
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(height: 120)
+    }
+    
+    private func barHeight(for value: Int) -> CGFloat {
+        CGFloat(value) / CGFloat(maxValue) * 80 + 12
+    }
+}
+
+struct StackedColumnChartView: View {
+    let columns: [[Double]]
+    let colors: [Color]
+    let labels: [String]
+    
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 10) {
+            ForEach(columns.indices, id: \.self) { columnIndex in
+                VStack(spacing: 6) {
+                    VStack(spacing: 2) {
+                        ForEach(columns[columnIndex].indices, id: \.self) { segmentIndex in
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(colors[segmentIndex % colors.count])
+                                .frame(height: segmentHeight(for: columns[columnIndex][segmentIndex]))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    Text(labels[columnIndex])
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(height: 120)
+    }
+    
+    private func segmentHeight(for value: Double) -> CGFloat {
+        max(CGFloat(value) * 70, 8)
+    }
+}
+
+struct MultiSegmentGaugeView: View {
+    let segments: [(Double, Color)]
+    let value: Double
+    
+    var body: some View {
+        ZStack {
+            ForEach(segments.indices, id: \.self) { index in
+                let start = segments.prefix(index).map { $0.0 }.reduce(0, +)
+                let end = start + segments[index].0
+                Circle()
+                    .trim(from: start, to: end)
+                    .stroke(segments[index].1, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            
+            Circle()
+                .trim(from: 0, to: min(value, 1))
+                .stroke(Color.primary.opacity(0.8), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+            
+            Text("\(Int(value * 100))%")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.primary)
+        }
+        .frame(height: 120)
     }
 }
 
