@@ -300,7 +300,7 @@ struct NewMainView: View {
             HStack {
                 Text("Stats Overview")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.white)
                 
                 Spacer()
             }
@@ -347,7 +347,13 @@ struct NewMainView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(.ultraThinMaterial)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "0c2461"), Color(hex: "0c2461").opacity(0.85)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18)
@@ -360,7 +366,7 @@ struct NewMainView: View {
                     lineWidth: 1
                 )
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
     }
     
     private func refreshStats() {
