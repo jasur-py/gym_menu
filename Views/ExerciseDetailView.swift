@@ -239,6 +239,7 @@ struct ExerciseDetailView: View {
                     get: { set.reps },
                     set: { newValue in
                         viewModel.exercise.sets[index].reps = newValue
+                        updateLastLogged(for: index)
                     }
                 ), in: 0...100) {
                     Text("\(set.reps)")
@@ -252,6 +253,7 @@ struct ExerciseDetailView: View {
                     get: { set.weight },
                     set: { newValue in
                         viewModel.exercise.sets[index].weight = newValue
+                        updateLastLogged(for: index)
                     }
                 ), format: .number)
                 .keyboardType(.decimalPad)
@@ -260,6 +262,14 @@ struct ExerciseDetailView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private func updateLastLogged(for index: Int) {
+        guard viewModel.exercise.sets.indices.contains(index) else { return }
+        viewModel.exercise.sets[index].lastLoggedReps = viewModel.exercise.sets[index].reps
+        viewModel.exercise.sets[index].lastLoggedWeight = viewModel.exercise.sets[index].weight
+        viewModel.exercise.sets[index].lastLoggedWeightUnitRaw = settingsService.weightUnit.rawValue
+        viewModel.exercise.sets[index].lastLoggedAt = Date()
     }
     
     private var notesSection: some View {

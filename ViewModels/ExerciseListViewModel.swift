@@ -61,6 +61,7 @@ class ExerciseListViewModel: ObservableObject {
     
     func saveExercises() {
         dataService.saveExercises(exercises)
+        NotificationCenter.default.post(name: .exercisesUpdated, object: nil)
     }
     
     func addExercise(_ exercise: Exercise) {
@@ -181,4 +182,8 @@ class ExerciseListViewModel: ObservableObject {
         // Save the updated group
         groupViewModel.updateGroup(currentGroup)
     }
+}
+
+extension Notification.Name {
+    static let exercisesUpdated = Notification.Name("exercisesUpdated")
 }
