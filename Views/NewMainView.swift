@@ -13,7 +13,14 @@ struct NewMainView: View {
     @State private var isSupplementsReminderOpen = false
     @ObservedObject var quoteService = QuoteService.shared
     @ObservedObject var settingsService = SettingsService.shared
+    @ObservedObject var supplementsService = SupplementsReminderService.shared
     @State private var refreshTrigger = UUID()
+    @State private var statsSummary = StatsSummary()
+    @State private var weeklyActivityValues: [Int] = Array(repeating: 0, count: 7)
+    @State private var dailyGoalProgress: Double = 0
+    @Environment(\.scenePhase) private var scenePhase
+    
+    private let dailyGoalTargetSets = 12
     
     var body: some View {
         NavigationStack {
@@ -95,7 +102,19 @@ struct NewMainView: View {
             .onAppear {
                 // Refresh workout programs when view appears
                 refreshTrigger = UUID()
+            refreshStats()
             }
+        .onReceive(NotificationCenter.default.publisher(for: .exercisesUpdated)) { _ in
+            refreshStats()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                refreshStats()
+            }
+        }
+        .onChange(of: settingsService.weightUnit) { _, _ in
+            refreshStats()
+        }
             .sheet(isPresented: $isSupplementsReminderOpen) {
                 SupplementsReminderPlaceholderView()
             }
@@ -217,6 +236,65 @@ struct NewMainView: View {
         .buttonStyle(.plain)
     }
     
+    // Calculate supplement split by weekday
+    private var supplementSplitColumns: [[Double]] {
+        let enabledReminders = supplementsService.reminders.filter { $0.isEnabled }
+        guard !enabledReminders.isEmpty else {
+            return [[], [], [], [], [], [], []] // Empty columns if no reminders
+        }
+        
+        var weekdaySupplements: [[UUID]] = Array(repeating: [], count: 7) // M-S
+        
+        for reminder in enabledReminders {
+            switch reminder.repeatRule {
+            case .daily:
+                // Add to all days
+                for i in 0..<7 {
+                    weekdaySupplements[i].append(reminder.id)
+                }
+            case .weekly:
+                // Add to specific weekday
+                let weekday = Calendar.current.component(.weekday, from: reminder.time)
+                let index = (weekday + 5) % 7 // Convert Sunday=1 to Monday=0 format
+                weekdaySupplements[index].append(reminder.id)
+            case .monthly:
+                // Add to all days (monthly repeats regardless of weekday)
+                for i in 0..<7 {
+                    weekdaySupplements[i].append(reminder.id)
+                }
+            case .custom:
+                // For custom, check if it falls on each weekday in the current week
+                let calendar = Calendar.current
+                let now = Date()
+                guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else { continue }
+                
+                var currentDate = weekInterval.start
+                while currentDate < weekInterval.end {
+                    // Check if reminder is scheduled for this date
+                    let daysSinceStart = calendar.dateComponents([.day], from: calendar.startOfDay(for: reminder.startDate), to: calendar.startOfDay(for: currentDate)).day ?? 0
+                    
+                    if daysSinceStart >= 0 && daysSinceStart % reminder.repeatEveryDays == 0 {
+                        if reminder.repeatForDays == 0 || daysSinceStart < reminder.repeatForDays {
+                            let weekday = calendar.component(.weekday, from: currentDate)
+                            let index = (weekday + 5) % 7
+                            if !weekdaySupplements[index].contains(reminder.id) {
+                                weekdaySupplements[index].append(reminder.id)
+                            }
+                        }
+                    }
+                    currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+                }
+            }
+        }
+        
+        // Convert to proportional columns
+        return weekdaySupplements.map { supplements in
+            guard !supplements.isEmpty else { return [] } // Empty column for days with no supplements
+            let proportion = 1.0 / Double(supplements.count)
+            return Array(repeating: proportion, count: supplements.count)
+        }
+    }
+    
     private var statsOverviewSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
@@ -228,18 +306,18 @@ struct NewMainView: View {
             }
             
             HStack(spacing: 12) {
-                LiquidGlassStatCard(title: "Today", value: "1,250 kg")
-                LiquidGlassStatCard(title: "Week", value: "8,430 kg")
+                LiquidGlassStatCard(title: "Today", value: formattedWeight(statsSummary.today))
+                LiquidGlassStatCard(title: "Week", value: formattedWeight(statsSummary.week))
             }
             
             HStack(spacing: 12) {
-                LiquidGlassStatCard(title: "Month", value: "31,780 kg")
-                LiquidGlassStatCard(title: "Overall", value: "214,600 kg")
+                LiquidGlassStatCard(title: "Month", value: formattedWeight(statsSummary.month))
+                LiquidGlassStatCard(title: "Overall", value: formattedWeight(statsSummary.overall))
             }
             
             LiquidGlassChartCard(title: "Weekly Activity") {
                 WeeklyActivityChartView(
-                    values: [2, 3, 0, 4, 5, 1, 2],
+                    values: weeklyActivityValues,
                     labels: ["M", "T", "W", "Th", "F", "S", "S"]
                 )
             }
@@ -247,15 +325,9 @@ struct NewMainView: View {
             HStack(spacing: 12) {
                 LiquidGlassChartCard(title: "Supplement Split") {
                     StackedColumnChartView(
-                        columns: [
-                            [0.3, 0.4, 0.3],
-                            [0.2, 0.5, 0.3],
-                            [0.1, 0.3, 0.6],
-                            [0.4, 0.4, 0.2],
-                            [0.25, 0.35, 0.4]
-                        ],
+                        columns: supplementSplitColumns,
                         colors: [Color.teal, Color.blue, Color.purple],
-                        labels: ["AM", "Mid", "PM", "AM", "PM"]
+                        labels: ["M", "T", "W", "Th", "F", "S", "S"]
                     )
                 }
                 
@@ -267,7 +339,7 @@ struct NewMainView: View {
                             (0.2, Color.orange),
                             (0.2, Color.red)
                         ],
-                        value: 0.72
+                        value: dailyGoalProgress
                     )
                 }
             }
@@ -291,6 +363,87 @@ struct NewMainView: View {
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
+    private func refreshStats() {
+        let exercises = DataPersistenceService.shared.loadExercises()
+        let calendar = Calendar.current
+        let now = Date()
+        let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now)
+        let monthInterval = calendar.dateInterval(of: .month, for: now)
+        
+        var summary = StatsSummary()
+        var dailySetsCompleted = 0
+        var totalSetsToday = 0
+        var weeklyCounts = Array(repeating: 0, count: 7)
+        
+        for exercise in exercises {
+            // Handle exercises with 0 sets
+            if exercise.sets.isEmpty {
+                if let completedAt = exercise.lastCompletedAt, calendar.isDateInToday(completedAt) {
+                    dailySetsCompleted += 1
+                    totalSetsToday += 1
+                }
+                continue
+            }
+            
+            // Handle exercises with sets
+            for set in exercise.sets {
+                if let completedAt = set.lastCompletedAt, calendar.isDateInToday(completedAt) {
+                    dailySetsCompleted += 1
+                }
+                
+                if let loggedAt = set.lastLoggedAt, calendar.isDateInToday(loggedAt) {
+                    totalSetsToday += 1
+                } else if let completedAt = set.lastCompletedAt, calendar.isDateInToday(completedAt) {
+                    totalSetsToday += 1
+                }
+                
+                // Weight stats: only count completed (ticked) sets
+                guard let completedAt = set.lastCompletedAt else { continue }
+                let hasEntry = set.lastLoggedReps > 0 || set.lastLoggedWeight > 0
+                guard hasEntry else { continue }
+                
+                let weightValue = convertWeight(set)
+                let total = Double(set.lastLoggedReps) * weightValue
+                summary.overall += total
+                
+                if calendar.isDateInToday(completedAt) {
+                    summary.today += total
+                }
+                
+                if let weekInterval, weekInterval.contains(completedAt) {
+                    summary.week += total
+                    let index = weekdayIndex(for: completedAt, calendar: calendar)
+                    weeklyCounts[index] += 1
+                }
+                
+                if let monthInterval, monthInterval.contains(completedAt) {
+                    summary.month += total
+                }
+            }
+        }
+        
+        statsSummary = summary
+        weeklyActivityValues = weeklyCounts
+        let target = totalSetsToday > 0 ? totalSetsToday : dailyGoalTargetSets
+        dailyGoalProgress = min(Double(dailySetsCompleted) / Double(target), 1)
+    }
+    
+    private func convertWeight(_ set: ExerciseSet) -> Double {
+        let rawUnit = set.lastLoggedWeightUnitRaw ?? settingsService.weightUnit.rawValue
+        let storedUnit = WeightUnit(rawValue: rawUnit) ?? settingsService.weightUnit
+        return storedUnit.convert(from: set.lastLoggedWeight, to: settingsService.weightUnit)
+    }
+    
+    private func formattedWeight(_ value: Double) -> String {
+        let rounded = Int(ceil(value))
+        return "\(rounded) \(settingsService.weightUnit.rawValue)"
+    }
+    
+    private func weekdayIndex(for date: Date, calendar: Calendar) -> Int {
+        let weekday = calendar.component(.weekday, from: date)
+        return (weekday + 5) % 7
+    }
+    
     // MARK: - Profile Picture
     private var profilePicture: some View {
         ZStack {
@@ -312,6 +465,13 @@ struct NewMainView: View {
         let initials = components.compactMap { $0.first }.prefix(2)
         return String(initials).uppercased()
     }
+}
+
+struct StatsSummary {
+    var today: Double = 0
+    var week: Double = 0
+    var month: Double = 0
+    var overall: Double = 0
 }
 
 // MARK: - Calendar Section

@@ -7,6 +7,7 @@ struct Exercise: Identifiable, Codable {
     var notes: String
     var imagePaths: [String] // Changed to array for multiple images
     var groupIds: [UUID] // Multiple groups support (max 7)
+    var lastCompletedAt: Date? // For exercises with 0 sets
     
     static let maxGroupsCount = 7
     
@@ -40,7 +41,8 @@ struct Exercise: Identifiable, Codable {
         sets: [ExerciseSet] = [],
         notes: String = "",
         imagePaths: [String] = [],
-        groupIds: [UUID] = []
+        groupIds: [UUID] = [],
+        lastCompletedAt: Date? = nil
     ) {
         self.id = id
         self.name = name
@@ -48,6 +50,7 @@ struct Exercise: Identifiable, Codable {
         self.notes = notes
         self.imagePaths = imagePaths
         self.groupIds = Array(groupIds.prefix(Exercise.maxGroupsCount)) // Enforce max 7
+        self.lastCompletedAt = lastCompletedAt
     }
 }
 

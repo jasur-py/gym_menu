@@ -280,6 +280,21 @@ struct ExerciseRowView: View {
                         
                         Spacer()
                         
+                        // Tick box for exercises with 0 sets
+                        if exercise.sets.isEmpty {
+                            Button(action: {
+                                toggleExerciseCompletion()
+                            }) {
+                                Image(systemName: isExerciseCompletedToday() ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(isExerciseCompletedToday() ? .green : .secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Tick to complete")
+                            .accessibilityLabel("Complete exercise")
+                            .accessibilityHint("Tick to complete")
+                        }
+                        
                         // Edit button
                         Button(action: {
                             showingEditView = true
@@ -335,18 +350,63 @@ struct ExerciseRowView: View {
                                 .fontWeight(.semibold)
                             
                             ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { index, set in
-                                HStack {
-                                    Text("Set \(index + 1):")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Spacer()
-                                    if set.reps > 0 {
-                                        Text("\(set.reps) reps")
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text("Set \(index + 1)")
                                             .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        if let previous = previousEntryText(for: set) {
+                                            Text(previous)
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                        }
                                     }
-                                    if set.weight > 0 {
-                                        Text("\(set.weight, specifier: "%.1f") \(settingsService.weightUnit.rawValue)")
-                                            .font(.caption)
+                                    
+                                    HStack(spacing: 10) {
+                                        TextField("Reps", value: Binding(
+                                            get: { set.reps },
+                                            set: { newValue in
+                                                updateSet(index: index, reps: newValue)
+                                            }
+                                        ), format: .number)
+                                        .keyboardType(.numberPad)
+                                        .multilineTextAlignment(.center)
+                                        .frame(width: 70)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white.opacity(0.08))
+                                        .cornerRadius(8)
+                                        
+                                        TextField("Weight", value: Binding(
+                                            get: { set.weight },
+                                            set: { newValue in
+                                                updateSet(index: index, weight: newValue)
+                                            }
+                                        ), format: .number)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.center)
+                                        .frame(width: 90)
+                                        .padding(.vertical, 6)
+                                        .background(Color.white.opacity(0.08))
+                                        .cornerRadius(8)
+                                        
+                                        Text(settingsService.weightUnit.rawValue.uppercased())
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                        
+                                        Button(action: {
+                                            toggleSetCompletion(index: index)
+                                        }) {
+                                            Image(systemName: isSetCompletedToday(set) ? "checkmark.circle.fill" : "circle")
+                                                .font(.system(size: 18, weight: .semibold))
+                                                .foregroundColor(isSetCompletedToday(set) ? .green : .secondary)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .help("Tick to complete")
+                                        .accessibilityLabel("Complete set")
+                                        .accessibilityHint("Tick to complete")
+                                        
+                                        Spacer()
                                     }
                                 }
                                 .padding(.leading, 8)
@@ -435,6 +495,116 @@ struct ExerciseRowView: View {
         } message: {
             Text("Are you sure you want to delete \"\(exercise.name)\"? This action cannot be undone.")
         }
+        .onChange(of: isExpanded) { _, newValue in
+            if newValue {
+                resetCurrentInputsIfNeeded()
+            }
+        }
+    }
+    
+    private func updateSet(index: Int, reps: Int? = nil, weight: Double? = nil) {
+        var updatedExercise = exercise
+        guard updatedExercise.sets.indices.contains(index) else { return }
+        var updatedSet = updatedExercise.sets[index]
+        
+        if let reps {
+            updatedSet.reps = reps
+        }
+        if let weight {
+            updatedSet.weight = weight
+        }
+        
+        updatedSet.lastLoggedReps = updatedSet.reps
+        updatedSet.lastLoggedWeight = updatedSet.weight
+        updatedSet.lastLoggedAt = Date()
+        updatedSet.lastLoggedWeightUnitRaw = settingsService.weightUnit.rawValue
+        
+        updatedExercise.sets[index] = updatedSet
+        onUpdateExercise(updatedExercise)
+    }
+    
+    private func toggleSetCompletion(index: Int) {
+        var updatedExercise = exercise
+        guard updatedExercise.sets.indices.contains(index) else { return }
+        var updatedSet = updatedExercise.sets[index]
+        
+        if isSetCompletedToday(updatedSet) {
+            updatedSet.lastCompletedAt = nil
+        } else {
+            let now = Date()
+            updatedSet.lastCompletedAt = now
+            updatedSet.lastLoggedAt = now
+            updatedSet.lastLoggedReps = updatedSet.reps
+            updatedSet.lastLoggedWeight = updatedSet.weight
+            updatedSet.lastLoggedWeightUnitRaw = settingsService.weightUnit.rawValue
+        }
+        
+        updatedExercise.sets[index] = updatedSet
+        onUpdateExercise(updatedExercise)
+        NotificationCenter.default.post(name: .exercisesUpdated, object: nil)
+    }
+    
+    private func resetCurrentInputsIfNeeded() {
+        var updatedExercise = exercise
+        var didChange = false
+        
+        for index in updatedExercise.sets.indices {
+            var set = updatedExercise.sets[index]
+            let hasValues = set.reps != 0 || set.weight != 0
+            if set.lastLoggedAt == nil && hasValues {
+                set.lastLoggedAt = Date()
+                set.lastLoggedReps = set.reps
+                set.lastLoggedWeight = set.weight
+                set.lastLoggedWeightUnitRaw = settingsService.weightUnit.rawValue
+                set.reps = 0
+                set.weight = 0
+                updatedExercise.sets[index] = set
+                didChange = true
+                continue
+            }
+            if let lastLoggedAt = set.lastLoggedAt, !Calendar.current.isDateInToday(lastLoggedAt), hasValues {
+                set.reps = 0
+                set.weight = 0
+                updatedExercise.sets[index] = set
+                didChange = true
+            }
+        }
+        
+        if didChange {
+            onUpdateExercise(updatedExercise)
+        }
+    }
+    
+    private func previousEntryText(for set: ExerciseSet) -> String? {
+        guard set.lastLoggedReps > 0 || set.lastLoggedWeight > 0 else { return nil }
+        let unitRaw = set.lastLoggedWeightUnitRaw ?? settingsService.weightUnit.rawValue
+        let storedUnit = WeightUnit(rawValue: unitRaw) ?? settingsService.weightUnit
+        let convertedWeight = storedUnit.convert(from: set.lastLoggedWeight, to: settingsService.weightUnit)
+        let weightText = convertedWeight > 0 ? "\(convertedWeight, specifier: "%.1f")" : "0"
+        return "Prev: \(set.lastLoggedReps)/\(weightText)"
+    }
+    
+    private func isSetCompletedToday(_ set: ExerciseSet) -> Bool {
+        guard let lastCompletedAt = set.lastCompletedAt else { return false }
+        return Calendar.current.isDateInToday(lastCompletedAt)
+    }
+    
+    private func isExerciseCompletedToday() -> Bool {
+        guard let lastCompletedAt = exercise.lastCompletedAt else { return false }
+        return Calendar.current.isDateInToday(lastCompletedAt)
+    }
+    
+    private func toggleExerciseCompletion() {
+        var updatedExercise = exercise
+        
+        if isExerciseCompletedToday() {
+            updatedExercise.lastCompletedAt = nil
+        } else {
+            updatedExercise.lastCompletedAt = Date()
+        }
+        
+        onUpdateExercise(updatedExercise)
+        NotificationCenter.default.post(name: .exercisesUpdated, object: nil)
     }
 }
 
