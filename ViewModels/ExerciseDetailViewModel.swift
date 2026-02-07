@@ -108,13 +108,3 @@ class ExerciseDetailViewModel: ObservableObject {
         exercise.sets.remove(at: index)
     }
 }
-
-extension Data {
-    var isAnimatedGIF: Bool {
-        guard let source = CGImageSourceCreateWithData(self as CFData, nil) else {
-            return false
-        }
-        let frameCount = CGImageSourceGetCount(source)
-        return frameCount > 1
-    }
-}
