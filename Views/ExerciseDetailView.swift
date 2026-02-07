@@ -296,12 +296,20 @@ struct ExerciseDetailView: View {
                     HStack(spacing: 10) {
                         ForEach(Array(viewModel.loadedImages.enumerated()), id: \.offset) { index, image in
                             ZStack(alignment: .topTrailing) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 100, height: 100)
-                                    .clipped()
-                                    .cornerRadius(8)
+                                // Use AnimatedGIFView for GIFs, regular Image for others
+                                if index < viewModel.loadedImageData.count && viewModel.loadedImageData[index].isAnimatedGIF {
+                                    AnimatedGIFView(imageData: viewModel.loadedImageData[index])
+                                        .frame(width: 100, height: 100)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                } else {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 100, height: 100)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                }
                                 
                                 Button(action: {
                                     viewModel.removeImage(at: index)

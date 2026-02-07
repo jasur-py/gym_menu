@@ -36,6 +36,20 @@ class ImageStorageService {
         }
     }
     
+    // Save image data (preserves GIF animation)
+    func saveImageData(_ data: Data, fileExtension: String = "jpg") -> String? {
+        let fileName = "\(UUID().uuidString).\(fileExtension)"
+        let fileURL = imagesDirectoryURL.appendingPathComponent(fileName)
+        
+        do {
+            try data.write(to: fileURL)
+            return fileName
+        } catch {
+            print("Error saving image data: \(error.localizedDescription)")
+            return nil
+        }
+    }
+    
     func loadImage(from path: String) -> UIImage? {
         let fileURL = imagesDirectoryURL.appendingPathComponent(path)
         
@@ -46,6 +60,18 @@ class ImageStorageService {
         }
         
         return image
+    }
+    
+    // Load raw image data (preserves GIF animation)
+    func loadImageData(from path: String) -> Data? {
+        let fileURL = imagesDirectoryURL.appendingPathComponent(path)
+        
+        guard FileManager.default.fileExists(atPath: fileURL.path),
+              let imageData = try? Data(contentsOf: fileURL) else {
+            return nil
+        }
+        
+        return imageData
     }
     
     func deleteImage(at path: String) {

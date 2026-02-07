@@ -3,11 +3,13 @@ import SwiftUI
 import Combine
 import UIKit
 import PhotosUI
+import ImageIO
 
 class ExerciseDetailViewModel: ObservableObject {
     @Published var exercise: Exercise
     @Published var selectedPhotos: [PhotosPickerItem] = []
     @Published var loadedImages: [UIImage] = []
+    @Published var loadedImageData: [Data] = [] // Store original data for GIFs
     @Published var trainingGroupViewModel = TrainingGroupViewModel()
     
     private let dataService = DataPersistenceService.shared
@@ -27,10 +29,14 @@ class ExerciseDetailViewModel: ObservableObject {
             self.isNewExercise = true
         }
         
-        // Load existing images after all properties are initialized
+        // Load existing images and data after all properties are initialized
         if !self.exercise.imagePaths.isEmpty {
-            self.loadedImages = self.exercise.imagePaths.compactMap { path in
-                imageService.loadImage(from: path)
+            for path in self.exercise.imagePaths {
+                if let imageData = imageService.loadImageData(from: path),
+                   let image = UIImage(data: imageData) {
+                    self.loadedImages.append(image)
+                    self.loadedImageData.append(imageData)
+                }
             }
         }
     }
@@ -41,13 +47,19 @@ class ExerciseDetailViewModel: ObservableObject {
         Task {
             var newImagePaths: [String] = []
             var newImages: [UIImage] = []
+            var newImageData: [Data] = []
             
             for photo in selectedPhotos {
                 if let data = try? await photo.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
-                    if let imagePath = imageService.saveImage(image) {
+                    // Detect file type
+                    let fileExtension = data.isAnimatedGIF ? "gif" : "jpg"
+                    
+                    // Save original data to preserve GIF animation
+                    if let imagePath = imageService.saveImageData(data, fileExtension: fileExtension) {
                         newImagePaths.append(imagePath)
                         newImages.append(image)
+                        newImageData.append(data)
                     }
                 }
             }
@@ -55,6 +67,7 @@ class ExerciseDetailViewModel: ObservableObject {
             await MainActor.run {
                 exercise.imagePaths.append(contentsOf: newImagePaths)
                 loadedImages.append(contentsOf: newImages)
+                loadedImageData.append(contentsOf: newImageData)
                 selectedPhotos = []
             }
         }
@@ -72,6 +85,9 @@ class ExerciseDetailViewModel: ObservableObject {
         if index < loadedImages.count {
             loadedImages.remove(at: index)
         }
+        if index < loadedImageData.count {
+            loadedImageData.remove(at: index)
+        }
     }
     
     func removeAllImages() {
@@ -80,6 +96,7 @@ class ExerciseDetailViewModel: ObservableObject {
         }
         exercise.imagePaths = []
         loadedImages = []
+        loadedImageData = []
     }
     
     func addSet() {
@@ -89,5 +106,15 @@ class ExerciseDetailViewModel: ObservableObject {
     func removeSet(at index: Int) {
         guard index < exercise.sets.count else { return }
         exercise.sets.remove(at: index)
+    }
+}
+
+extension Data {
+    var isAnimatedGIF: Bool {
+        guard let source = CGImageSourceCreateWithData(self as CFData, nil) else {
+            return false
+        }
+        let frameCount = CGImageSourceGetCount(source)
+        return frameCount > 1
     }
 }
