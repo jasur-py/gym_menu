@@ -4,6 +4,7 @@ import UIKit
 struct HorizontalImageView: View {
     let imagePaths: [String]
     @State private var loadedImages: [UIImage] = []
+    @State private var loadedImageData: [Data] = []
     @State private var isExpanded = false
     
     var body: some View {
@@ -31,12 +32,20 @@ struct HorizontalImageView: View {
                     ScrollView(.horizontal, showsIndicators: true) {
                         HStack(spacing: 12) {
                             ForEach(Array(loadedImages.enumerated()), id: \.offset) { index, image in
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 120, height: 120)
-                                    .clipped()
-                                    .cornerRadius(8)
+                                // Use AnimatedGIFView for GIFs, regular Image for others
+                                if index < loadedImageData.count && loadedImageData[index].isAnimatedGIF {
+                                    AnimatedGIFView(imageData: loadedImageData[index])
+                                        .frame(width: 120, height: 120)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                } else {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 120, height: 120)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                }
                             }
                             
                             // Show placeholders for images still loading
@@ -61,8 +70,12 @@ struct HorizontalImageView: View {
     
     private func loadImages() {
         if loadedImages.isEmpty {
-            loadedImages = imagePaths.compactMap { path in
-                ImageStorageService.shared.loadImage(from: path)
+            for path in imagePaths {
+                if let imageData = ImageStorageService.shared.loadImageData(from: path),
+                   let image = UIImage(data: imageData) {
+                    loadedImages.append(image)
+                    loadedImageData.append(imageData)
+                }
             }
         }
     }
