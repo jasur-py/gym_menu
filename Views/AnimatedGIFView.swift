@@ -5,10 +5,11 @@ import ImageIO
 /// A SwiftUI view that displays animated GIFs
 struct AnimatedGIFView: UIViewRepresentable {
     let imageData: Data
+    var contentMode: UIView.ContentMode = .scaleAspectFill
     
     func makeUIView(context: Context) -> UIImageView {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFill
+        imageView.contentMode = contentMode
         imageView.clipsToBounds = true
         
         setupAnimation(for: imageView)
@@ -17,6 +18,7 @@ struct AnimatedGIFView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIImageView, context: Context) {
+        uiView.contentMode = contentMode
         // Restart animation if it's not animating (fixes scrolling issue)
         if uiView.animationImages != nil && !uiView.isAnimating {
             uiView.startAnimating()
