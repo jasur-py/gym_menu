@@ -1,310 +1,343 @@
-# 💪 GymPlanner - iOS Workout Tracking App
+# GymPlanner — iOS Workout Tracking App
 
 <div align="center">
 
 [![iOS](https://img.shields.io/badge/iOS-17.0+-000000?style=flat&logo=apple&logoColor=white)](https://developer.apple.com/ios/)
-[![Swift](https://img.shields.io/badge/Swift-5.9+-orange?style=flat&logo=swift&logoColor=white)](https://swift.org)
-[![SwiftUI](https://img.shields.io/badge/SwiftUI-blue?style=flat&logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
+[![Swift](https://img.shields.io/badge/Swift-5.9+-F05138?style=flat&logo=swift&logoColor=white)](https://swift.org)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-0071E3?style=flat&logo=swift&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A modern, feature-rich iOS workout tracking app built with SwiftUI and MVVM architecture.
+A modern, feature-rich iOS workout tracking app built with SwiftUI and the MVVM architecture.  
+Liquid glass design language throughout. Fully offline. Zero tracking.
 
-[Features](#-features) • [Screenshots](#-screenshots) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture)
+[Features](#features) · [Screenshots](#screenshots) · [Installation](#installation) · [Usage](#usage) · [Architecture](#architecture) · [Contributing](#contributing)
 
 </div>
 
 ---
 
-## ✨ Features
+## Features
 
-### 🏋️ Exercise Management
-- ✅ **Create & Edit Exercises** - Add detailed workout information
-- ✅ **Multiple Sets** - Track individual sets with separate reps and weight
-- ✅ **Weight Units** - Toggle between kg and lb
-- ✅ **Exercise Notes** - Add custom notes and instructions
-- ✅ **Multi-Image Support** - Attach up to 10 photos per exercise
-- ✅ **Horizontal Image Gallery** - Swipe through exercise photos
+### Exercise Management
 
-### 🎯 Training Groups
-- ✅ **Custom Groups** - Organize exercises into training groups
-- ✅ **Color-Coded Tabs** - Visual organization with custom colors
-- ✅ **Multi-Group Assignment** - Assign exercises to up to 7 groups
-- ✅ **"All Exercises" View** - See all exercises across all groups
-- ✅ **Group Management** - Add, edit, delete, and reorder groups
+- Create, edit, and delete exercises with full detail
+- Track individual sets with separate reps and weight values
+- Toggle between **kg** and **lb** weight units (auto-converts logged history)
+- Add free-form notes and instructions per exercise
+- Attach up to **10 photos** per exercise (JPEG and animated GIF supported)
+- Swipeable horizontal image gallery with **tap-to-enlarge full-screen viewer**
+- Full-screen viewer supports GIF animation, multi-image paging, and tap-to-dismiss
+- Mark sets or zero-set exercises as completed with a single tap
+- Previous entry displayed per set for quick reference
 
-### 🎨 Customization
-- ✅ **Light/Dark Mode** - System, Light, or Dark theme options
-- ✅ **Background Colors** - 8 predefined background color options
-- ✅ **Custom Header** - Beautiful gradient or custom image header
-- ✅ **Configurable Settings** - Personalize your workout experience
+### Training Groups
 
-### 🔄 Drag & Drop
-- ✅ **Exercise Reordering** - Long-press and drag to reorder exercises
-- ✅ **Per-Tab Sorting** - Each training group maintains its own order
-- ✅ **Tab Reordering** - Drag training group tabs to rearrange
-- ✅ **Persistent Order** - Sorting preferences saved automatically
+- Organize exercises into custom color-coded training groups
+- Assign a single exercise to up to **7 groups** simultaneously
+- Built-in "All Exercises" view aggregates every exercise
+- Add, edit, delete, and reorder groups freely
+- Per-group exercise ordering preserved independently
 
-### 📅 Additional Features
-- ✅ **Calendar View** - Track workout dates with graphical calendar
-- ✅ **Data Persistence** - All data saved locally and securely
-- ✅ **Swipe to Delete** - Quick exercise removal
-- ✅ **Offline-First** - Works without internet connection
-- ✅ **Privacy-Focused** - All data stays on your device
+### Workout Timer and Rest Timer
+
+- Start, pause, and stop a running workout timer from any group view
+- One-tap rest timer presets: **1 min**, **3 min**, **5 min**
+- On-screen overlay and local notification when rest time completes
+- Timers persist across tab switches within the session
+
+### Calendar and Day Planning
+
+- Collapsible calendar section on the main dashboard with today's planned groups
+- Full monthly calendar with horizontal date picker
+- Drag-and-drop group assignment: drag a training group onto any calendar date
+- Eraser mode to clear assignments with a single tap
+- Color-coded dot indicators show planned groups per date
+
+### Stats Overview
+
+- Dashboard cards for **Today**, **Week**, **Month**, and **Overall** total volume (reps × weight)
+- Weekly activity bar chart (Monday–Sunday)
+- Supplement split stacked column chart by weekday
+- Daily goal gauge with multi-segment progress ring
+- All stats respect the current weight unit and update in real time
+
+### Supplements Reminder
+
+- Create named supplement reminders with optional notes
+- Flexible repeat rules: **Daily**, **Weekly**, **Monthly**, or **Custom** (every N days for M days)
+- Per-reminder enable/disable toggle
+- Local notifications with configurable sound
+
+### Motivational Quotes
+
+- Daily "Quote of the Day" alert on app launch
+- Curated library of 150+ motivational quotes
+- Thumbs-up to dismiss; thumbs-down to permanently hide a quote
+- One quote per day, never repeated until the full library cycles
+
+### Customization and Settings
+
+- Appearance mode: **System**, **Light**, or **Dark**
+- Weight unit: **kg** or **lb** (applies globally)
+- Scheduled workout reminder with custom time and message
+- Supplement reminder sound toggle
+- Quote of the Day toggle
+- Notification authorization management
+
+### Drag and Drop
+
+- Long-press and drag to reorder exercises within any group tab
+- Long-press and drag training group tabs to rearrange their order
+- Drag groups onto calendar dates in the Day Planning view
+- All ordering preferences saved automatically
+
+### Design
+
+- **Liquid glass** design language: ultra-thin material backgrounds, gradient strokes, layered shadows
+- Consistent styling across every screen and component
+- Smooth spring animations and transitions throughout
+
+### Privacy and Offline
+
+- All data stored locally on-device (JSON files + image directory)
+- No cloud sync, no analytics, no network requests
+- Photo library access requested only when attaching images
+- Works entirely offline
 
 ---
 
-## 📱 Screenshots
+## Screenshots
 
-### Main Interface
-<img src="Screenshots/main_page.png" alt="Main View" width="300"/>
+### Dashboard
+<img src="Screenshots/main_page.png" alt="Dashboard" width="300"/>
 
-*Exercise list with custom training group tabs*
+*Main dashboard with workout programs, calendar, and stats overview*
 
 ### Training Groups
 <img src="Screenshots/training_groups.png" alt="Training Groups" width="300"/>
 
-*Create, manage and organize your training groups*
+*Create, manage, and organize training groups with custom colors*
 
-### Exercise Details
+### Exercise Detail
 <img src="Screenshots/exercise_detail.png" alt="Exercise Detail" width="300"/>
 
-*Add/Edit exercise with sets, images, and notes*
+*Add or edit an exercise with sets, images, and notes*
+
+### Exercise List
+<img src="Screenshots/exercise_list.png" alt="Exercise List" width="300"/>
+
+*Exercise list with group tabs, inline set editing, and completion checkmarks*
+
+### Full-Screen Image Viewer
+<img src="Screenshots/image_viewer.png" alt="Full-Screen Image Viewer" width="300"/>
+
+*Tap any image thumbnail to view full-screen with swipe paging and GIF support*
+
+### Workout Group with Timers
+<img src="Screenshots/workout_group.png" alt="Workout Group" width="300"/>
+
+*Group-specific exercise list with workout timer and rest timer presets*
+
+### Day Planning
+<img src="Screenshots/day_planning.png" alt="Day Planning" width="300"/>
+
+*Monthly calendar with drag-and-drop group assignment and eraser mode*
+
+### Calendar Section
+<img src="Screenshots/calendar.png" alt="Calendar" width="300"/>
+
+*Expandable calendar with date picker and planned group indicators*
+
+### Supplements Reminder
+<img src="Screenshots/supplements_reminder.png" alt="Supplements Reminder" width="300"/>
+
+*Create supplement reminders with flexible repeat rules and notifications*
 
 ### Settings
 <img src="Screenshots/settings.png" alt="Settings" width="300"/>
 
-*Customize appearance, weight units, and background*
+*Appearance mode, weight unit, workout reminder, and notification preferences*
 
-### Calendar & Dark Mode
-<img src="Screenshots/calendar.png" alt="Calendar View" width="300"/>
+### Quote of the Day
+<img src="Screenshots/quote_of_the_day.png" alt="Quote of the Day" width="300"/>
 
-*Calendar view for workout tracking*
-
----
-
-## 🛠 Requirements
-
-- **iOS**: 17.0 or later
-- **Xcode**: 15.0 or later
-- **Swift**: 5.9 or later
-- **Device**: iPhone (optimized for iPhone 12 and newer)
+*Daily motivational quote with thumbs-up and thumbs-down actions*
 
 ---
 
-## 📥 Installation
+## Requirements
+
+| Requirement | Minimum Version |
+|-------------|-----------------|
+| iOS         | 17.0            |
+| Xcode       | 15.0            |
+| Swift       | 5.9             |
+| Device      | iPhone (optimized for iPhone 12 and newer) |
+
+---
+
+## Installation
 
 ### Option 1: Clone and Run in Simulator
 
 ```bash
-# Clone the repository
 git clone https://github.com/jasur-py/gym_menu.git
-
-# Navigate to project directory
 cd gym_menu
-
-# Open in Xcode
 open GymPlanner/GymPlanner.xcodeproj
-
-# Select a simulator (e.g., iPhone 15 Pro)
-# Press Cmd + R to build and run
 ```
 
-### Option 2: Install on Physical Device
+Select a simulator (e.g. iPhone 15 Pro) and press **Cmd + R** to build and run.
 
-1. **Open Xcode** and load the project
-2. **Connect your iPhone** via USB cable
-3. **Select your device** from the device selector (top-left)
-4. **Configure Signing**:
-   - Select project in navigator
-   - Go to "Signing & Capabilities" tab
-   - Choose your Apple Developer team
-   - Change Bundle Identifier to something unique (e.g., `com.yourname.GymPlanner`)
-5. **Trust Developer** (first time only):
-   - On iPhone: Settings → General → VPN & Device Management
-   - Tap your Apple ID and select "Trust"
-6. **Build and Run** (Cmd + R)
+### Option 2: Install on a Physical Device
+
+1. Open `GymPlanner/GymPlanner.xcodeproj` in Xcode.
+2. Connect your iPhone via USB.
+3. Select your device from the device selector.
+4. Under **Signing & Capabilities**, choose your Apple Developer team and set a unique Bundle Identifier (e.g. `com.yourname.GymPlanner`).
+5. On your iPhone, go to **Settings > General > VPN & Device Management**, tap your Apple ID, and select **Trust** (first time only).
+6. Press **Cmd + R** to build and run.
 
 ---
 
-## 🎯 Usage
+## Usage
 
 ### Getting Started
 
-1. **Launch the app** - You'll see the main exercise list
-2. **Create a training group**:
-   - Tap the folder icon (📁) in top-left
-   - Tap "+" to add a new group
-   - Choose a name and color
-   
-3. **Add your first exercise**:
-   - Tap the "+" button in top-right
-   - Enter exercise name
-   - Select training group(s)
-   - Add sets with reps and weight
-   - Attach photos (optional)
-   - Add notes (optional)
-   - Tap "Save"
+1. Launch the app — the main dashboard appears with the Workout Programs card, calendar, and stats.
+2. Tap the **Workout Programs** card or a specific group pill to enter the exercise list.
+3. Tap **+** to create a new training group, then **+** again to add your first exercise.
 
 ### Managing Exercises
 
-- **Edit**: Tap the pencil icon (✏️) on any exercise
-- **Delete**: Swipe left on an exercise → "Delete"
-- **Reorder**: Long-press an exercise and drag to new position
-- **View Details**: Tap an exercise to expand/collapse
-- **Add Images**: Tap "📷 Select Photos" in edit mode
+| Action         | How                                                    |
+|----------------|--------------------------------------------------------|
+| Add            | Tap the **+** button in the exercise list              |
+| Edit           | Tap the pencil icon on any exercise row                |
+| Delete         | Swipe left on a row, or use the delete button expanded |
+| Reorder        | Long-press and drag an exercise to a new position      |
+| Expand/Collapse| Tap an exercise row to toggle details                  |
+| Complete Set   | Tap the circle checkbox next to any set                |
+| View Image     | Tap any image thumbnail to open the full-screen viewer |
 
 ### Organizing Workouts
 
-- **Switch Groups**: Tap any training group tab at the top
-- **View All**: Tap "All Exercises" to see everything
-- **Reorder Tabs**: Long-press and drag tabs left/right
-- **Edit Groups**: Tap folder icon → Edit/Delete groups
+- Switch groups using the tab bar at the bottom of the exercise list.
+- Tap "All Exercises" to see every exercise across all groups.
+- Long-press and drag tabs to reorder training groups.
+- Open the Day Planning view from the calendar section to assign groups to dates.
 
-### Customization
+### Settings
 
-- **Settings**: Tap gear icon (⚙️) in top-left
-- **Change Theme**: Select System, Light, or Dark mode
-- **Weight Units**: Toggle between kg and lb
-- **Background**: Choose from 8 color options
-
-### Calendar
-
-- **Open Calendar**: Tap calendar icon (📅) at bottom-left
-- **Select Date**: Tap any date in the calendar
-- **Close**: Tap X or tap outside the calendar
+Tap the gear icon on the dashboard to open the settings side sheet. From there you can change appearance mode, weight unit, toggle daily quotes, configure workout reminders, and manage supplement reminder sounds.
 
 ---
 
-## 🏗 Architecture
+## Architecture
 
-### Design Pattern: MVVM (Model-View-ViewModel)
+### MVVM (Model–View–ViewModel)
 
 ```
-┌─────────────────────────────────────────────────┐
-│                    Views                        │
-│  (SwiftUI Components - UI Layer)                │
-│  • ExerciseListView                             │
-│  • ExerciseDetailView                           │
-│  • SettingsView                                 │
-│  • TrainingGroupView                            │
-└───────────────┬─────────────────────────────────┘
-                │
-                ↓ Binding / ObservedObject
-┌─────────────────────────────────────────────────┐
-│                 ViewModels                      │
-│  (Business Logic Layer)                         │
-│  • ExerciseListViewModel                        │
-│  • ExerciseDetailViewModel                      │
-│  • TrainingGroupViewModel                       │
-└───────────────┬─────────────────────────────────┘
-                │
-                ↓ Uses
-┌─────────────────────────────────────────────────┐
-│            Models & Services                    │
-│  (Data Layer)                                   │
-│  • Exercise, ExerciseSet, TrainingGroup         │
-│  • DataPersistenceService                       │
-│  • ImageStorageService                          │
-│  • SettingsService                              │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                      Views                          │
+│  SwiftUI components — UI layer                      │
+│  NewMainView · ExerciseListView · ExerciseDetailView│
+│  WorkoutGroupView · TrainingGroupView               │
+│  DayPlanningView · SettingsView                     │
+└───────────────────┬─────────────────────────────────┘
+                    │ @ObservedObject / @StateObject
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│                   ViewModels                        │
+│  Business logic layer                               │
+│  ExerciseListViewModel · ExerciseDetailViewModel    │
+│  TrainingGroupViewModel                             │
+└───────────────────┬─────────────────────────────────┘
+                    │ Uses
+                    ▼
+┌─────────────────────────────────────────────────────┐
+│               Models & Services                     │
+│  Data layer                                         │
+│  Exercise · ExerciseSet · TrainingGroup             │
+│  DataPersistenceService · ImageStorageService       │
+│  SettingsService · QuoteService                     │
+│  SupplementsReminderService                         │
+└─────────────────────────────────────────────────────┘
 ```
 
-### Key Components
-
-#### Models
-- **`Exercise`** - Exercise data structure with sets, notes, and images
-- **`ExerciseSet`** - Individual set with reps and weight
-- **`TrainingGroup`** - Training group with name, color, and exercise order
-
-#### ViewModels
-- **`ExerciseListViewModel`** - Manages exercise list, filtering, and sorting
-- **`ExerciseDetailViewModel`** - Handles exercise creation/editing
-- **`TrainingGroupViewModel`** - Manages training groups and their order
-
-#### Services
-- **`DataPersistenceService`** - JSON-based data storage
-- **`ImageStorageService`** - Image file management
-- **`SettingsService`** - User preferences persistence
-
-#### Views
-- **`ExerciseListView`** - Main list with tabs and drag-drop
-- **`ExerciseDetailView`** - Exercise creation/editing form
-- **`SettingsView`** - App customization interface
-- **`TrainingGroupView`** - Training group management
-
----
-
-## 📂 Project Structure
+### Project Structure
 
 ```
 gym_menu/
 ├── GymPlanner/
-│   └── GymPlanner.xcodeproj/          # Xcode project file
-├── GymPlannerApp.swift                # App entry point
+│   └── GymPlanner.xcodeproj/
+├── GymPlannerApp.swift
 ├── Models/
-│   ├── Exercise.swift                 # Exercise data model
-│   ├── ExerciseSet.swift              # Set data model
-│   └── TrainingGroup.swift            # Training group model
+│   ├── Exercise.swift
+│   ├── ExerciseSet.swift
+│   └── TrainingGroup.swift
 ├── ViewModels/
-│   ├── ExerciseListViewModel.swift    # Exercise list logic
-│   ├── ExerciseDetailViewModel.swift  # Exercise detail logic
-│   └── TrainingGroupViewModel.swift   # Training group logic
+│   ├── ExerciseListViewModel.swift
+│   ├── ExerciseDetailViewModel.swift
+│   └── TrainingGroupViewModel.swift
 ├── Views/
-│   ├── ContentView.swift              # Root view
-│   ├── ExerciseListView.swift         # Main exercise list
-│   ├── ExerciseDetailView.swift       # Exercise form
-│   ├── SettingsView.swift             # Settings page
-│   ├── TrainingGroupView.swift        # Group management
+│   ├── NewMainView.swift
+│   ├── ContentView.swift
+│   ├── ExerciseListView.swift
+│   ├── ExerciseDetailView.swift
+│   ├── WorkoutGroupView.swift
+│   ├── TrainingGroupView.swift
+│   ├── DayPlanningView.swift
+│   ├── SettingsView.swift
+│   ├── AnimatedGIFView.swift
 │   └── Components/
-│       ├── CollapsibleImageView.swift # Single image viewer
-│       └── HorizontalImageView.swift  # Image gallery
+│       ├── CollapsibleImageView.swift
+│       └── HorizontalImageView.swift
 ├── Services/
-│   ├── DataPersistenceService.swift   # JSON persistence
-│   ├── ImageStorageService.swift      # Image file storage
-│   └── SettingsService.swift          # Settings management
+│   ├── DataPersistenceService.swift
+│   ├── ImageStorageService.swift
+│   ├── SettingsService.swift
+│   ├── QuoteService.swift
+│   └── SupplementsReminderService.swift
 ├── Assets/
-│   └── AppIcon.appiconset/            # App icon
-├── README.md                          # This file
-└── Screenshots/                       # App screenshots (for README)
+│   └── AppIcon.appiconset/
+├── Screenshots/
+└── README.md
 ```
 
 ---
 
-## 💾 Data Storage
+## Data Storage
 
-### Local Storage (Documents Directory)
-
-All data is stored locally on your device:
+All data is stored locally in the app's Documents directory:
 
 ```
 Documents/
-├── exercises.json              # Exercise data
-├── trainingGroups.json         # Training group data
-├── settings.json               # User preferences
+├── exercises.json
+├── training_groups.json
+├── day_schedule.json
+├── settings.json
 └── Images/
-    ├── [UUID].jpg              # Exercise images
-    ├── [UUID].jpg
-    └── ...
+    └── [UUID].jpg | [UUID].gif
 ```
 
-### Data Models
+### Exercise JSON
 
-**Exercise JSON Structure:**
 ```json
 {
   "id": "UUID",
   "name": "Bench Press",
   "sets": [
-    { "reps": 10, "weight": 60.0 },
-    { "reps": 8, "weight": 70.0 }
+    { "reps": 10, "weight": 60.0, "lastLoggedReps": 10, "lastLoggedWeight": 60.0 },
+    { "reps": 8, "weight": 70.0, "lastLoggedReps": 8, "lastLoggedWeight": 70.0 }
   ],
   "notes": "Focus on form",
-  "imagePaths": ["UUID.jpg", "UUID.jpg"],
+  "imagePaths": ["UUID.jpg", "UUID.gif"],
   "groupIds": ["UUID", "UUID"]
 }
 ```
 
-**Training Group JSON Structure:**
+### Training Group JSON
+
 ```json
 {
   "id": "UUID",
@@ -316,83 +349,46 @@ Documents/
 
 ---
 
-## 🔒 Privacy & Security
+## Privacy
 
-- ✅ **Local-Only Storage** - All data stays on your device
-- ✅ **No Cloud Sync** - Your workouts are private
-- ✅ **No Analytics** - Zero tracking or data collection
-- ✅ **No Internet Required** - Fully offline app
-- ✅ **Photo Permissions** - Only requested when adding images
-
----
-
-## 🚀 Future Enhancements
-
-Potential features for future versions:
-
-- [ ] iCloud sync across devices
-- [ ] Workout history and progress tracking
-- [ ] Rest timer between sets
-- [ ] Exercise templates and presets
-- [ ] Charts and statistics
-- [ ] Export workout data (CSV/PDF)
-- [ ] Apple Watch companion app
-- [ ] Workout reminders and notifications
+- All data stays on your device.
+- No cloud sync. No analytics. No telemetry.
+- Photo library access is requested only when you choose to attach images.
+- The app works entirely offline.
 
 ---
 
-## 🐛 Known Issues
+## Contributing
 
-- None currently! 🎉
+Contributions are welcome.
 
-If you find a bug, please [open an issue](https://github.com/jasur-py/gym_menu/issues).
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! If you'd like to contribute:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/your-feature`.
+3. Commit your changes: `git commit -m "Add your feature"`.
+4. Push the branch: `git push origin feature/your-feature`.
+5. Open a Pull Request.
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Jasur Khojiev**
+
 - GitHub: [@jasur-py](https://github.com/jasur-py)
 - Repository: [gym_menu](https://github.com/jasur-py/gym_menu)
 
 ---
 
-## 🙏 Acknowledgments
-
-- Built with [SwiftUI](https://developer.apple.com/xcode/swiftui/)
-- Icons from [SF Symbols](https://developer.apple.com/sf-symbols/)
-- Inspired by the fitness community 💪
-
----
-
-## ⭐ Show Your Support
-
-If you find this project helpful, please consider giving it a ⭐ on GitHub!
-
----
-
 <div align="center">
 
-**Made with ❤️ and SwiftUI**
+Built with SwiftUI
 
-[Report Bug](https://github.com/jasur-py/gym_menu/issues) • [Request Feature](https://github.com/jasur-py/gym_menu/issues)
+[Report a Bug](https://github.com/jasur-py/gym_menu/issues) · [Request a Feature](https://github.com/jasur-py/gym_menu/issues)
 
 </div>
