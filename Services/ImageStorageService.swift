@@ -1,4 +1,7 @@
 import UIKit
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.jasur.GymPlanner", category: "ImageStorage")
 
 class ImageStorageService {
     static let shared = ImageStorageService()
@@ -31,7 +34,7 @@ class ImageStorageService {
             try imageData.write(to: fileURL)
             return fileName
         } catch {
-            print("Error saving image: \(error.localizedDescription)")
+            logger.error("Failed to save image: \(error.localizedDescription)")
             return nil
         }
     }
@@ -45,7 +48,7 @@ class ImageStorageService {
             try data.write(to: fileURL)
             return fileName
         } catch {
-            print("Error saving image data: \(error.localizedDescription)")
+            logger.error("Failed to save image data: \(error.localizedDescription)")
             return nil
         }
     }
@@ -86,4 +89,3 @@ class ImageStorageService {
         return imagesDirectoryURL.appendingPathComponent(path)
     }
 }
-

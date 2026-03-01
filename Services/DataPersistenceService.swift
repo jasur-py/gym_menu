@@ -1,5 +1,8 @@
 import Foundation
 import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.jasur.GymPlanner", category: "DataPersistence")
 
 class DataPersistenceService {
     static let shared = DataPersistenceService()
@@ -36,7 +39,7 @@ class DataPersistenceService {
             let exercises = try decoder.decode([Exercise].self, from: data)
             return exercises
         } catch {
-            print("Error loading exercises: \(error.localizedDescription)")
+            logger.error("Failed to load exercises: \(error.localizedDescription)")
             return []
         }
     }
@@ -48,7 +51,7 @@ class DataPersistenceService {
             let data = try encoder.encode(exercises)
             try data.write(to: fileURL)
         } catch {
-            print("Error saving exercises: \(error.localizedDescription)")
+            logger.error("Failed to save exercises: \(error.localizedDescription)")
         }
     }
     
@@ -65,7 +68,7 @@ class DataPersistenceService {
             let groups = try decoder.decode([TrainingGroup].self, from: data)
             return groups
         } catch {
-            print("Error loading training groups: \(error.localizedDescription)")
+            logger.error("Failed to load training groups: \(error.localizedDescription)")
             return []
         }
     }
@@ -77,7 +80,7 @@ class DataPersistenceService {
             let data = try encoder.encode(groups)
             try data.write(to: groupsFileURL)
         } catch {
-            print("Error saving training groups: \(error.localizedDescription)")
+            logger.error("Failed to save training groups: \(error.localizedDescription)")
         }
     }
     
@@ -94,7 +97,7 @@ class DataPersistenceService {
             let schedule = try decoder.decode([String: [UUID]].self, from: data)
             return schedule
         } catch {
-            print("Error loading day schedule: \(error.localizedDescription)")
+            logger.error("Failed to load day schedule: \(error.localizedDescription)")
             return [:]
         }
     }
@@ -106,8 +109,7 @@ class DataPersistenceService {
             let data = try encoder.encode(schedule)
             try data.write(to: scheduleFileURL)
         } catch {
-            print("Error saving day schedule: \(error.localizedDescription)")
+            logger.error("Failed to save day schedule: \(error.localizedDescription)")
         }
     }
 }
-

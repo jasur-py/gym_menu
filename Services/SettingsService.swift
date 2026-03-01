@@ -3,6 +3,9 @@ import SwiftUI
 import UIKit
 import Combine
 import UserNotifications
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.jasur.GymPlanner", category: "Settings")
 
 enum WeightUnit: String, Codable, CaseIterable {
     case kg = "kg"
@@ -174,7 +177,7 @@ class SettingsService: ObservableObject {
                 settings.workoutReminderMessage
             )
         } catch {
-            print("Error loading settings: \(error.localizedDescription)")
+            logger.error("Failed to load settings: \(error.localizedDescription)")
             return (nil, nil, nil, nil, nil, nil, nil, nil)
         }
     }
@@ -195,7 +198,7 @@ class SettingsService: ObservableObject {
             let data = try encoder.encode(settings)
             try data.write(to: settingsFileURL)
         } catch {
-            print("Error saving settings: \(error.localizedDescription)")
+            logger.error("Failed to save settings: \(error.localizedDescription)")
         }
     }
     
