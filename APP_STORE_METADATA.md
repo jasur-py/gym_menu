@@ -21,7 +21,7 @@ Use this file as a reference when filling in App Store Connect fields.
 ## Version Information
 
 - **Version**: 1.0.0
-- **Build**: 1
+- **Build**: 4
 - **Copyright**: 2026 Jasur Khojiev
 
 ---
@@ -34,7 +34,7 @@ Your all-in-one gym companion. Organize exercises by muscle groups, plan weekly 
 
 ### Description (4000 chars max)
 
-Gym Planner is a clean, focused workout organizer built for lifters who want full control over their training without the clutter. No subscriptions. No ads. Just your workouts, your way.
+Gym Planner is a clean, focused workout organizer built for lifters who want full control over their training. Your workouts, your way.
 
 ORGANIZE YOUR EXERCISES
 Create a personalized exercise library with custom names, sets, reps, and weight tracking. Attach reference images or animated GIFs to each exercise so you always know the correct form. Assign exercises to multiple training groups like Push, Pull, Legs, or any custom split you prefer.
@@ -63,7 +63,7 @@ DESIGNED FOR YOU
 - Custom background colors
 - Modern Liquid Glass design language
 
-No account required. No internet needed. All your data stays on your device.
+All your data stays privately on your device. Works entirely offline.
 
 ### Keywords (100 chars max, comma-separated)
 
@@ -84,7 +84,7 @@ Initial release of Gym Planner.
 - Supplements reminder with flexible scheduling
 - Daily motivational quotes
 - Dark mode and custom themes
-- Offline-first — no account or internet required
+- Offline-first — works without internet
 
 ---
 
@@ -124,9 +124,7 @@ You need screenshots for at least these device sizes:
 1. **6.7-inch** (iPhone 15 Pro Max / iPhone 16 Pro Max) — 1290 x 2796 px
 2. **6.5-inch** (iPhone 14 Plus / iPhone 15 Plus) — 1284 x 2778 px (optional if 6.7 provided)
 3. **5.5-inch** (iPhone 8 Plus) — 1242 x 2208 px (optional)
-4. **iPad Pro 12.9-inch** — 2048 x 2732 px (if supporting iPad)
-
-Minimum 3 screenshots, maximum 10 per device size.
+Minimum 3 screenshots, maximum 10 per device size. No iPad screenshots needed (app is iPhone-only).
 
 ### Recommended Screenshot Flow
 1. Main dashboard with workout programs and calendar
