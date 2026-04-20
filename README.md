@@ -1,4 +1,4 @@
-# GymPlanner — iOS Workout Tracking App
+# GymPin — iOS Workout Tracking App
 
 <div align="center">
 
@@ -270,7 +270,7 @@ Tap the gear icon on the dashboard to open the settings side sheet. From there y
 gym_menu/
 ├── GymPlanner/
 │   └── GymPlanner.xcodeproj/
-├── GymPlannerApp.swift
+├── GymPinApp.swift
 ├── Models/
 │   ├── Exercise.swift
 │   ├── ExerciseSet.swift

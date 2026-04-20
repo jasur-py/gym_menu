@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct GymPlannerApp: App {
+struct GymPinApp: App {
     @ObservedObject var settingsService = SettingsService.shared
     
     var body: some Scene {
@@ -11,4 +11,3 @@ struct GymPlannerApp: App {
         }
     }
 }
-

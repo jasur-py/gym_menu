@@ -1,4 +1,4 @@
-# Setup Guide for Gym Planner iOS App
+# Setup Guide for GymPin iOS App
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@
 3. Click **Next**
 
 ### Step 3: Configure Project
-- **Product Name**: `GymPlanner`
+- **Product Name**: `GymPin` (or keep your Xcode target name; display name is set separately)
 - **Team**: Select your Apple ID team (or "None" for personal use)
 - **Organization Identifier**: `com.yourname` (e.g., `com.jasur`)
 - **Interface**: **SwiftUI**
@@ -38,7 +38,7 @@
 
 ### Step 5: Replace Default Files
 1. **Delete** the default `ContentView.swift` that Xcode created
-2. **Delete** the default `GymPlannerApp.swift` (or `App.swift`) that Xcode created
+2. **Delete** the default `GymPinApp.swift` or `App.swift` that Xcode created (if you are generating a fresh project)
 
 ### Step 6: Add Our Files to Xcode
 1. In Xcode, right-click on the project name in the navigator
@@ -49,7 +49,7 @@
    - `ViewModels/`
    - `Views/`
    - `Services/`
-   - `GymPlannerApp.swift`
+   - `GymPinApp.swift`
 5. Make sure **"Copy items if needed"** is **UNCHECKED** (files are already in the right place)
 6. Make sure **"Create groups"** is selected
 7. Click **Add**

@@ -1,6 +1,6 @@
 //
 //  QuoteService.swift
-//  GymPlanner
+//  GymPin
 //
 //  Manages daily motivational quotes
 //

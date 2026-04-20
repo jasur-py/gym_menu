@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>GymPlanner needs access to your photo library to attach exercise reference images and GIFs.</string>
+	<string>GymPin needs access to your photo library to attach exercise reference images and GIFs.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>GymPlanner uses notifications to send workout reminders and supplement schedule alerts.</string>
+	<string>GymPin uses notifications to send workout reminders and supplement schedule alerts.</string>
 	<key>CFBundleDisplayName</key>
-	<string>Gym Planner</string>
+	<string>GymPin</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
