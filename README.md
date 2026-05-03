@@ -1,4 +1,4 @@
-# GymPin — iOS Workout Tracking App
+# GymPin — Notes & Notifications
 
 <div align="center">
 
