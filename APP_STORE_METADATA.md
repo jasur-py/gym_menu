@@ -6,7 +6,7 @@ Use this file as a reference when filling in App Store Connect fields.
 
 ## App Information
 
-- **App Name** (App Store listing): GymPin - Notes & Notifications
+- **App Name**: GymPin
 - **Subtitle** (30 chars max): Plan, Track & Crush Workouts
 - **Bundle ID**: com.jasur.GymPlanner
 - **SKU**: GYMPLANNER2026
@@ -34,7 +34,7 @@ Your all-in-one gym companion. Organize exercises by muscle groups, plan weekly 
 
 ### Description (4000 chars max)
 
-GymPin - Notes & Notifications is a clean, focused workout organizer built for lifters who want full control over their training. Your workouts, your way.
+GymPin is a clean, focused workout organizer built for lifters who want full control over their training. Your workouts, your way.
 
 ORGANIZE YOUR EXERCISES
 Create a personalized exercise library with custom names, sets, reps, and weight tracking. Attach reference images or animated GIFs to each exercise so you always know the correct form. Assign exercises to multiple training groups like Push, Pull, Legs, or any custom split you prefer.
@@ -73,7 +73,7 @@ gym,planner,workout,fitness,exercise,tracker,training,log,sets,reps,weight,calen
 
 ## What's New in This Version (Release Notes)
 
-Initial release of GymPin - Notes & Notifications.
+Initial release of GymPin.
 
 - Create and manage your exercise library
 - Organize exercises into custom training groups
@@ -97,7 +97,7 @@ Initial release of GymPin - Notes & Notifications.
 - **Phone**: (your phone number)
 
 ### Notes for Review
-This is a gym workout planning app (GymPin - Notes & Notifications). It stores all data locally on the device using JSON files and UserDefaults. No server-side component exists. The app requests Photo Library access for attaching exercise reference images and Notification permission for workout and supplement reminders. No account creation is required.
+This is a gym workout planning app (GymPin). It stores all data locally on the device using JSON files and UserDefaults. No server-side component exists. The app requests Photo Library access for attaching exercise reference images and Notification permission for workout and supplement reminders. No account creation is required.
 
 ### Demo Account
 Not applicable — the app does not require sign-in.
